@@ -1,0 +1,7 @@
+{
+  "ignorePatterns": [
+    { "pattern": "^http://localhost" },
+    { "pattern": "^http://.*\\.svc\\.cluster\\.local" }
+  ],
+  "timeout": "20s"
+}
