@@ -1,0 +1,47 @@
+---
+# yamllint configuration for Kubernetes manifests
+
+extends: default
+
+rules:
+  # Line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation (2 spaces for Kubernetes)
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Trailing spaces
+  trailing-spaces: enable
+
+  # Empty lines
+  empty-lines:
+    max: 2
+
+  # Document start (---)
+  document-start:
+    present: true
+
+  # Truthy values (for Kubernetes booleans)
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+    check-keys: false
+
+  # Brackets
+  brackets:
+    max-spaces-inside: 0
+
+  # Braces
+  braces:
+    max-spaces-inside: 0
+
+ignore: |
+  .git/
+  **/node_modules/

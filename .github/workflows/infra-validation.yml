@@ -1,0 +1,170 @@
+name: Infrastructure Validation
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-validation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+
+jobs:
+  validate-manifests:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          # Install kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+          # Install kubeval
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin/
+          rm kubeval-linux-amd64.tar.gz
+
+          # Install Python and yamllint
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install yamllint
+
+      - name: Validate YAML syntax
+        run: |
+          cd infra
+          ../infra/scripts/validate-manifests.sh
+
+      - name: Lint manifests
+        run: |
+          cd infra
+          ../infra/scripts/lint-manifests.sh
+
+      - name: Check dependencies
+        run: |
+          cd infra
+          ../infra/scripts/check-dependencies.sh || true  # Allow to fail for now
+
+  validate-helm-charts:
+    name: Validate Helm Values
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Validate Gitea values
+        run: |
+          helm repo add gitea-charts https://dl.gitea.io/charts/
+          helm repo update
+          helm template gitea gitea-charts/gitea \
+            --namespace raibid-gitea \
+            --values infra/gitea/values.yaml \
+            --dry-run
+
+      - name: Validate Redis values
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          helm template raibid-redis bitnami/redis \
+            --namespace raibid-redis \
+            --values infra/redis/values.yaml \
+            --dry-run
+
+      - name: Validate KEDA values
+        run: |
+          helm repo add kedacore https://kedacore.github.io/charts
+          helm repo update
+          helm template raibid-keda kedacore/keda \
+            --namespace keda \
+            --values infra/keda/values.yaml \
+            --dry-run
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov (IaC security scanner)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infra/
+          framework: kubernetes
+          soft_fail: true  # Don't fail build on security issues yet
+
+      - name: Check for secrets in manifests
+        run: |
+          # Check for potential secrets in manifests
+          echo "Scanning for potential secrets..."
+          if grep -r -i -E "(password|secret|token|key):\s*['\"]?[^'\"\s]{8,}" infra/ --include="*.yaml" --include="*.yml" | grep -v "values.yaml" | grep -v "example"; then
+            echo "::error::Potential secrets found in manifests!"
+            exit 1
+          else
+            echo "No secrets found in manifests."
+          fi
+
+  documentation:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check README files exist
+        run: |
+          for dir in infra/k3s infra/gitea infra/redis infra/keda infra/flux; do
+            if [ ! -f "$dir/README.md" ]; then
+              echo "::error::Missing README.md in $dir"
+              exit 1
+            fi
+          done
+          echo "All component READMEs exist."
+
+      - name: Validate markdown
+        uses: DavidAnson/markdownlint-cli2-action@v14
+        with:
+          globs: 'infra/**/*.md'
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-manifests, validate-helm-charts, security-scan, documentation]
+    if: always()
+    steps:
+      - name: Check validation results
+        run: |
+          echo "Infrastructure validation complete!"
+          echo "- Manifest validation: ${{ needs.validate-manifests.result }}"
+          echo "- Helm validation: ${{ needs.validate-helm-charts.result }}"
+          echo "- Security scan: ${{ needs.security-scan.result }}"
+          echo "- Documentation: ${{ needs.documentation.result }}"
+
+          if [ "${{ needs.validate-manifests.result }}" != "success" ]; then
+            echo "::error::Manifest validation failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.validate-helm-charts.result }}" != "success" ]; then
+            echo "::error::Helm validation failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.documentation.result }}" != "success" ]; then
+            echo "::error::Documentation validation failed"
+            exit 1
+          fi
+
+          echo "All validations passed!"

@@ -1,0 +1,47 @@
+# k3s Cluster Configuration
+# Standard mode configuration for DGX Spark
+
+# Kubeconfig permissions (allow non-root read)
+write-kubeconfig-mode: "0644"
+write-kubeconfig: "/home/raibid/.kube/config"
+
+# TLS Subject Alternative Names
+tls-san:
+  - "dgx-spark.local"
+  - "localhost"
+  - "127.0.0.1"
+
+# Node configuration
+node-name: "dgx-spark-node"
+node-label:
+  - "raibid-ci=true"
+  - "node-type=dgx-spark"
+
+# Networking
+cluster-cidr: "10.42.0.0/16"
+service-cidr: "10.43.0.0/16"
+cluster-dns: "10.43.0.10"
+
+# Storage
+default-local-storage-path: "/var/lib/rancher/k3s/storage"
+
+# Disable unwanted components (using Traefik by default)
+# disable:
+#   - traefik  # Uncomment to use custom ingress controller
+
+# Flannel backend (vxlan for overlay networking)
+flannel-backend: "vxlan"
+
+# Security
+protect-kernel-defaults: false  # Set true for production
+secrets-encryption: true
+
+# Snapshotter (use overlayfs for better performance)
+snapshotter: "overlayfs"
+
+# Kubelet configuration
+kubelet-arg:
+  - "max-pods=110"
+  - "eviction-hard=memory.available<500Mi"
+  - "eviction-soft=memory.available<1Gi"
+  - "eviction-soft-grace-period=memory.available=1m30s"

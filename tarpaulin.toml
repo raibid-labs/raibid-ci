@@ -1,0 +1,110 @@
+# Tarpaulin Configuration for Code Coverage
+# Documentation: https://github.com/xd009642/tarpaulin
+
+[report]
+# Coverage output formats
+# Options: Html, Xml, Json, Stdout, Lcov
+out = ["Html", "Xml"]
+
+# Output directory for coverage reports
+output-dir = "coverage"
+
+# Follow executables to shared libraries
+follow-exec = false
+
+[run]
+# Timeout for test execution (seconds)
+timeout = 300
+
+# Number of test threads
+# Set to 1 to avoid concurrency issues in tests
+test-threads = 1
+
+# Run tests with --release flag
+release = false
+
+# Count hits in tests
+count = true
+
+# Forward signals to the child process
+forward-signals = true
+
+[coverage]
+# Line coverage threshold (percentage)
+# Fail if coverage is below this value
+# Uncomment to enforce minimum coverage
+# line-coverage-threshold = 80
+
+# Branch coverage threshold
+# branch-coverage-threshold = 70
+
+# Exclude patterns from coverage
+exclude-files = [
+    "*/tests/*",
+    "*/examples/*",
+    "*/benches/*",
+]
+
+# Exclude specific lines from coverage
+# Lines containing these patterns will be excluded
+exclude-line-regex = [
+    # Unreachable code
+    "unreachable!()",
+    "panic!()",
+    "unimplemented!()",
+    "todo!()",
+
+    # Debug assertions
+    "debug_assert",
+
+    # Derive macros
+    "#\\[derive\\(",
+]
+
+# Packages to exclude from coverage
+exclude-packages = []
+
+# Features to enable during coverage
+# features = ["default"]
+
+# All features flag
+# all-features = false
+
+# No default features flag
+# no-default-features = false
+
+[instrumentation]
+# Avoid false positives by using advanced instrumentation
+# Options: Llvm, Ptrace
+# Llvm is more accurate but requires llvm-tools-preview
+engine = "Llvm"
+
+# Exclude modules from instrumentation
+exclude-modules = []
+
+# Exclude functions from instrumentation
+exclude-functions = []
+
+# Run ignored tests
+run-ignored = false
+
+# Run tests marked as should_panic
+run-should-panic = false
+
+# Workspace mode
+# all: cover all workspace members
+# workspace: cover only workspace members
+workspace = true
+
+[output]
+# Verbose output
+verbose = false
+
+# Don't print warnings
+no-dead-code = false
+
+# Print output for successful tests
+# success-output = false
+
+# Print output for failed tests
+# failure-output = true

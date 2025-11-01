@@ -1,0 +1,25 @@
+[build]
+# Use incremental compilation for faster rebuilds during development
+incremental = true
+
+[term]
+# Enable colored output
+color = "auto"
+
+# Verbose build output for CI environments
+verbose = false
+
+[alias]
+# Workspace-wide aliases
+check-all = "check --workspace --all-targets --all-features"
+test-all = "test --workspace --all-features"
+build-all = "build --workspace --all-features"
+clippy-all = "clippy --workspace --all-targets --all-features -- -D warnings"
+fmt-all = "fmt --all -- --check"
+
+# Individual crate aliases
+check-common = "check -p raibid-common --all-targets --all-features"
+check-cli = "check -p raibid-cli --all-targets --all-features"
+check-tui = "check -p raibid-tui --all-targets --all-features"
+check-server = "check -p raibid-server --all-targets --all-features"
+check-agent = "check -p raibid-agent --all-targets --all-features"
