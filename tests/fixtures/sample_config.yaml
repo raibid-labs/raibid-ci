@@ -1,0 +1,14 @@
+cluster:
+  name: test-cluster
+  namespace: raibid-ci
+api:
+  host: 0.0.0.0
+  port: 8080
+agents:
+  rust:
+    enabled: true
+redis:
+  host: localhost
+  port: 6379
+gitea:
+  url: http://localhost:3000
