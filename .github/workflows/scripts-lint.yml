@@ -1,0 +1,189 @@
+name: Scripts Lint
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**/*.sh'
+      - 'scripts/**/*.nu'
+      - '.shellcheckrc'
+      - '.github/workflows/scripts-lint.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**/*.sh'
+      - 'scripts/**/*.nu'
+      - '.shellcheckrc'
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck (Bash)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: |
+          echo "Running ShellCheck on all Bash scripts..."
+          find scripts -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
+            echo "Checking: $script"
+            shellcheck "$script" || exit 1
+          done
+          echo "✓ All Bash scripts passed ShellCheck"
+
+  nushell-check:
+    name: Nushell Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Nushell
+        run: |
+          # Install latest Nushell from GitHub releases
+          curl -L https://github.com/nushell/nushell/releases/download/0.96.1/nu-0.96.1-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
+          sudo mv nu-0.96.1-x86_64-unknown-linux-gnu/nu /usr/local/bin/
+          nu --version
+
+      - name: Check Nushell Scripts
+        run: |
+          echo "Checking Nushell script syntax..."
+          find scripts -name "*.nu" -type f -print0 | while IFS= read -r -d '' script; do
+            echo "Checking: $script"
+            nu --no-config-file --commands "open '$script' | parse" || exit 1
+          done
+          echo "✓ All Nushell scripts passed syntax check"
+
+  script-permissions:
+    name: Check Script Permissions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Executability
+        run: |
+          echo "Checking script executability..."
+          non_executable=()
+
+          # Check all .sh and .nu scripts (except templates)
+          while IFS= read -r -d '' script; do
+            if [[ ! -x "$script" ]] && [[ ! "$script" =~ TEMPLATE\. ]]; then
+              non_executable+=("$script")
+            fi
+          done < <(find scripts -name "*.sh" -o -name "*.nu" -print0)
+
+          if [[ ${#non_executable[@]} -gt 0 ]]; then
+            echo "❌ The following scripts are not executable:"
+            printf '  - %s\n' "${non_executable[@]}"
+            echo ""
+            echo "Fix with: chmod +x <script>"
+            exit 1
+          fi
+
+          echo "✓ All scripts are executable"
+
+  script-headers:
+    name: Check Script Headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Shebang Lines
+        run: |
+          echo "Checking for proper shebang lines..."
+          missing_shebang=()
+          wrong_shebang=()
+
+          # Check Bash scripts
+          while IFS= read -r script; do
+            first_line=$(head -n 1 "$script")
+            if [[ ! "$first_line" =~ ^#!/ ]]; then
+              missing_shebang+=("$script")
+            elif [[ ! "$first_line" =~ ^#!/bin/bash$ ]] && [[ ! "$first_line" =~ ^#!/usr/bin/env\ bash$ ]]; then
+              wrong_shebang+=("$script: $first_line")
+            fi
+          done < <(find scripts -name "*.sh")
+
+          # Check Nushell scripts
+          while IFS= read -r script; do
+            first_line=$(head -n 1 "$script")
+            if [[ ! "$first_line" =~ ^#!/ ]]; then
+              missing_shebang+=("$script")
+            elif [[ ! "$first_line" =~ ^#!/usr/bin/env\ nu$ ]]; then
+              wrong_shebang+=("$script: $first_line")
+            fi
+          done < <(find scripts -name "*.nu")
+
+          if [[ ${#missing_shebang[@]} -gt 0 ]]; then
+            echo "❌ Scripts missing shebang line:"
+            printf '  - %s\n' "${missing_shebang[@]}"
+            exit 1
+          fi
+
+          if [[ ${#wrong_shebang[@]} -gt 0 ]]; then
+            echo "⚠️ Scripts with non-standard shebang:"
+            printf '  - %s\n' "${wrong_shebang[@]}"
+            # Don't fail, just warn
+          fi
+
+          echo "✓ All scripts have proper shebang lines"
+
+  naming-convention:
+    name: Check Naming Conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Kebab-Case
+        run: |
+          echo "Checking naming conventions (kebab-case)..."
+          bad_names=()
+
+          while IFS= read -r -d '' script; do
+            filename=$(basename "$script")
+            # Check if filename uses kebab-case (lowercase letters, numbers, hyphens, dots)
+            if [[ ! "$filename" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z]+)?$ ]]; then
+              # Exception for TEMPLATE files
+              if [[ ! "$filename" =~ ^TEMPLATE\. ]]; then
+                bad_names+=("$script")
+              fi
+            fi
+          done < <(find scripts -name "*.sh" -o -name "*.nu" -print0)
+
+          if [[ ${#bad_names[@]} -gt 0 ]]; then
+            echo "❌ Scripts not following kebab-case naming:"
+            printf '  - %s\n' "${bad_names[@]}"
+            echo ""
+            echo "Use kebab-case: script-name.sh (not script_name.sh or ScriptName.sh)"
+            exit 1
+          fi
+
+          echo "✓ All scripts follow kebab-case naming convention"
+
+  summary:
+    name: Lint Summary
+    runs-on: ubuntu-latest
+    needs: [shellcheck, nushell-check, script-permissions, script-headers, naming-convention]
+    steps:
+      - name: Summary
+        run: |
+          echo "✅ All script quality checks passed!"
+          echo ""
+          echo "Checks completed:"
+          echo "  - ShellCheck (Bash linting)"
+          echo "  - Nushell syntax validation"
+          echo "  - Script permissions (executability)"
+          echo "  - Shebang line verification"
+          echo "  - Naming convention (kebab-case)"

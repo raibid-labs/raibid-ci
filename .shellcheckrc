@@ -1,0 +1,14 @@
+# ShellCheck configuration for raibid-ci scripts
+# See: https://github.com/koalaman/shellcheck/wiki
+
+# Disable SC2312: Masking return values (we use pipefail)
+disable=SC2312
+
+# Disable SC1091: Not following sourced files (we don't use source)
+disable=SC1091
+
+# Enable all optional checks
+enable=all
+
+# Shell dialect (bash)
+shell=bash

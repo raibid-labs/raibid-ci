@@ -28,8 +28,8 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          chmod +x ./.github/scripts/check-draft-status.sh
-          ./.github/scripts/check-draft-status.sh
+          chmod +x ./scripts/infra/check-draft-status.sh
+          ./scripts/infra/check-draft-status.sh
 
       - name: Skip if Draft
         if: steps.draft_check.outputs.is_draft == 'true'
@@ -58,8 +58,8 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          chmod +x ./.github/scripts/check-issue-readiness.sh
-          ./.github/scripts/check-issue-readiness.sh
+          chmod +x ./scripts/infra/check-issue-readiness.sh
+          ./scripts/infra/check-issue-readiness.sh
 
       - name: Resume Paused Agent
         if: steps.draft_check.outputs.is_draft == 'false' && steps.check.outputs.ready == 'true'
@@ -99,5 +99,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          chmod +x ./.github/scripts/spawn-agent-comment.sh
-          ./.github/scripts/spawn-agent-comment.sh
+          chmod +x ./scripts/infra/spawn-agent-comment.sh
+          ./scripts/infra/spawn-agent-comment.sh

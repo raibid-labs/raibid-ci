@@ -80,8 +80,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          chmod +x ./.github/scripts/assign-next-issue.sh
-          ./.github/scripts/assign-next-issue.sh
+          chmod +x ./scripts/infra/assign-next-issue.sh
+          ./scripts/infra/assign-next-issue.sh
 
       - name: Spawn Agent for Next Issue
         if: steps.next.outputs.issue_number != ''
@@ -89,8 +89,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ steps.next.outputs.issue_number }}
         run: |
-          chmod +x ./.github/scripts/spawn-agent-comment.sh
-          ./.github/scripts/spawn-agent-comment.sh
+          chmod +x ./scripts/infra/spawn-agent-comment.sh
+          ./scripts/infra/spawn-agent-comment.sh
 
       - name: No More Issues
         if: steps.next.outputs.issue_number == ''
