@@ -220,13 +220,11 @@ Error recovery strategies:
 - Transaction-based rollback for setup failures
 - Detailed error messages with troubleshooting hints
 
-See [Error Recovery Guide](../../error-recovery.md) for details.
+See [Error Recovery Guide](../../guides/error-recovery.md) for details.
 
 ## Related Documentation
 
 - [User Guide](../../USER_GUIDE.md)
-- [Configuration Guide](../../guides/configuration.md)
-- [Infrastructure Setup](../../guides/infrastructure-setup.md)
 - [WS-01 Workstream](../../workstreams/01-cli-tui-application/README.md)
 
 ---

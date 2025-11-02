@@ -254,7 +254,7 @@ pub struct App {
 ## Related Documentation
 
 - [User Guide](../../USER_GUIDE.md)
-- [Development Guide](../../guides/tui-development.md)
+- 
 - [WS-01 Workstream](../../workstreams/01-cli-tui-application/README.md)
 
 ## Mock Data

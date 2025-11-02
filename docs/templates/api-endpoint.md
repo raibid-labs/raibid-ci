@@ -318,16 +318,10 @@ curl "http://api.example.com/api/v1/[endpoint]?sort=-created_at"
 ### v1.0.0 (2025-XX-XX)
 - Initial release
 
-## Related Endpoints
-
-- [Related Endpoint 1](./other-endpoint.md)
-- [Related Endpoint 2](./another-endpoint.md)
-
 ## See Also
 
-- [API Overview](./README.md)
-- [Authentication Guide](../guides/authentication.md)
-- [Error Handling](../guides/error-handling.md)
+- [API Overview](../api/)
+- [Technology Research](../technology-research.md)
 
 ---
 

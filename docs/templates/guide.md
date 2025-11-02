@@ -13,7 +13,6 @@ High-level summary of the guide:
 
 - Prerequisite 1
 - Prerequisite 2
-- Link to [related guide](./other-guide.md) if needed
 
 **Required knowledge:**
 - Knowledge area 1
@@ -124,8 +123,8 @@ fix-command
 ## Next Steps
 
 What to do after completing this guide:
-- [Related Guide 1](./related-guide-1.md)
-- [Related Guide 2](./related-guide-2.md)
+- Continue with related work
+- Review additional documentation
 - Return to [main documentation](../README.md)
 
 ## Advanced Topics
@@ -145,9 +144,9 @@ Another optional enhancement.
 
 ## Related Documentation
 
-- [Component Documentation](../components/component-name/README.md)
-- [API Reference](../api/api-name.md)
-- [Troubleshooting](./troubleshooting.md)
+- [Architecture Documentation](../architecture/)
+- [Technology Research](../technology-research.md)
+- [User Guide](../USER_GUIDE.md)
 
 ## Summary
 

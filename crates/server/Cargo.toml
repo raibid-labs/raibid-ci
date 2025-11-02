@@ -24,13 +24,28 @@ tokio = { workspace = true }
 futures = { workspace = true }
 async-trait = { workspace = true }
 
-# HTTP server (placeholder - will add axum or actix-web later)
-# axum = "0.7"
-# tower = "0.4"
+# HTTP server (Axum)
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+hyper = { workspace = true }
 
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+# Redis for job queue
+redis = { workspace = true }
+
+# HMAC for webhook signature verification
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+
 [dev-dependencies]
 tempfile = { workspace = true }
+reqwest = { workspace = true }
