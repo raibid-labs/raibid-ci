@@ -394,6 +394,6 @@ If you're making many requests, the API may rate limit you. Add delays between r
 
 ## See Also
 
-- [CLI Configuration](./cli-configuration.md)
-- [API Documentation](./api-reference.md)
-- [Job Queue Architecture](./architecture/job-queue.md)
+- [CLI Overview](../README.md)
+- [API Documentation](./README.md)
+- [Job Queue Architecture](./components/infrastructure/README.md)

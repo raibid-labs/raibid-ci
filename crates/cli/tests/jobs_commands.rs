@@ -4,6 +4,7 @@
 //! with various inputs and produce the expected outputs.
 
 use predicates::prelude::*;
+use assert_cmd::assert::OutputAssertExt;
 use std::process::Command;
 
 /// Test that the jobs command shows help when no subcommand is provided
