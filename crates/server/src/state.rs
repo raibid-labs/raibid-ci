@@ -5,19 +5,45 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Application state shared across all handlers
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct AppState {
     /// Server start time
     start_time: chrono::DateTime<chrono::Utc>,
 
     /// Request counter
-    request_count: AtomicU64,
+    request_count: Arc<AtomicU64>,
 
     /// Active connections
-    active_connections: AtomicU64,
+    active_connections: Arc<AtomicU64>,
 
     /// Health check status
     health_status: Arc<RwLock<HealthStatus>>,
+
+    /// Redis client (optional for testing)
+    redis_client: Option<redis::Client>,
+
+    /// Gitea webhook secret
+    gitea_webhook_secret: Option<String>,
+
+    /// GitHub webhook secret
+    github_webhook_secret: Option<String>,
+}
+
+impl std::fmt::Debug for AppState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AppState")
+            .field("start_time", &self.start_time)
+            .field("request_count", &self.request_count)
+            .field("active_connections", &self.active_connections)
+            .field("health_status", &self.health_status)
+            .field("redis_client", &self.redis_client.is_some())
+            .field("gitea_webhook_secret", &self.gitea_webhook_secret.is_some())
+            .field(
+                "github_webhook_secret",
+                &self.github_webhook_secret.is_some(),
+            )
+            .finish()
+    }
 }
 
 /// Health check status
@@ -48,10 +74,72 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             start_time: chrono::Utc::now(),
-            request_count: AtomicU64::new(0),
-            active_connections: AtomicU64::new(0),
+            request_count: Arc::new(AtomicU64::new(0)),
+            active_connections: Arc::new(AtomicU64::new(0)),
             health_status: Arc::new(RwLock::new(HealthStatus::default())),
+            redis_client: None,
+            gitea_webhook_secret: None,
+            github_webhook_secret: None,
         }
+    }
+
+    /// Create new application state with Redis client
+    pub fn with_redis(redis_url: &str) -> Result<Self, redis::RedisError> {
+        let client = redis::Client::open(redis_url)?;
+        Ok(Self {
+            start_time: chrono::Utc::now(),
+            request_count: Arc::new(AtomicU64::new(0)),
+            active_connections: Arc::new(AtomicU64::new(0)),
+            health_status: Arc::new(RwLock::new(HealthStatus::default())),
+            redis_client: Some(client),
+            gitea_webhook_secret: None,
+            github_webhook_secret: None,
+        })
+    }
+
+    /// Create new application state with Redis and webhook secrets
+    pub fn with_config(
+        redis_url: &str,
+        gitea_webhook_secret: Option<String>,
+        github_webhook_secret: Option<String>,
+    ) -> Result<Self, redis::RedisError> {
+        let client = redis::Client::open(redis_url)?;
+        Ok(Self {
+            start_time: chrono::Utc::now(),
+            request_count: Arc::new(AtomicU64::new(0)),
+            active_connections: Arc::new(AtomicU64::new(0)),
+            health_status: Arc::new(RwLock::new(HealthStatus::default())),
+            redis_client: Some(client),
+            gitea_webhook_secret,
+            github_webhook_secret,
+        })
+    }
+
+    /// Get Redis connection
+    pub async fn redis_connection(
+        &self,
+    ) -> Result<redis::aio::MultiplexedConnection, crate::error::ServerError> {
+        match &self.redis_client {
+            Some(client) => client
+                .get_multiplexed_async_connection()
+                .await
+                .map_err(|e| {
+                    crate::error::ServerError::Internal(format!("Redis connection error: {}", e))
+                }),
+            None => Err(crate::error::ServerError::Internal(
+                "Redis client not configured".to_string(),
+            )),
+        }
+    }
+
+    /// Get Gitea webhook secret
+    pub fn gitea_webhook_secret(&self) -> Option<&str> {
+        self.gitea_webhook_secret.as_deref()
+    }
+
+    /// Get GitHub webhook secret
+    pub fn github_webhook_secret(&self) -> Option<&str> {
+        self.github_webhook_secret.as_deref()
     }
 
     /// Get server start time

@@ -19,6 +19,18 @@ pub struct ServerConfig {
 
     /// Maximum request body size in bytes
     pub max_body_size: usize,
+
+    /// Redis connection URL
+    pub redis_url: String,
+
+    /// Gitea webhook secret
+    pub gitea_webhook_secret: Option<String>,
+
+    /// GitHub webhook secret
+    pub github_webhook_secret: Option<String>,
+
+    /// Rate limit (requests per minute)
+    pub rate_limit_rpm: u64,
 }
 
 impl Default for ServerConfig {
@@ -29,6 +41,10 @@ impl Default for ServerConfig {
             log_format: "text".to_string(),
             cors_enabled: true,
             max_body_size: 10 * 1024 * 1024, // 10MB
+            redis_url: "redis://127.0.0.1:6379".to_string(),
+            gitea_webhook_secret: None,
+            github_webhook_secret: None,
+            rate_limit_rpm: 100,
         }
     }
 }
@@ -42,6 +58,11 @@ impl ServerConfig {
             log_format: "text".to_string(),
             cors_enabled: true,
             max_body_size: 10 * 1024 * 1024,
+            redis_url: std::env::var("RAIBID_REDIS_URL")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+            gitea_webhook_secret: std::env::var("RAIBID_GITEA_WEBHOOK_SECRET").ok(),
+            github_webhook_secret: std::env::var("RAIBID_GITHUB_WEBHOOK_SECRET").ok(),
+            rate_limit_rpm: 100,
         }
     }
 
@@ -62,6 +83,14 @@ impl ServerConfig {
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(10 * 1024 * 1024),
+            redis_url: std::env::var("RAIBID_REDIS_URL")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+            gitea_webhook_secret: std::env::var("RAIBID_GITEA_WEBHOOK_SECRET").ok(),
+            github_webhook_secret: std::env::var("RAIBID_GITHUB_WEBHOOK_SECRET").ok(),
+            rate_limit_rpm: std::env::var("RAIBID_RATE_LIMIT_RPM")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(100),
         }
     }
 }
@@ -78,6 +107,8 @@ mod tests {
         assert_eq!(config.log_format, "text");
         assert!(config.cors_enabled);
         assert_eq!(config.max_body_size, 10 * 1024 * 1024);
+        assert_eq!(config.redis_url, "redis://127.0.0.1:6379");
+        assert_eq!(config.rate_limit_rpm, 100);
     }
 
     #[test]

@@ -69,9 +69,6 @@ reqwest = { version = "0.11", features = ["blocking", "json"] }
 # Redis
 redis = { version = "0.24", features = ["tokio-comp", "streams"] }
 
-# Git
-git2 = "0.18"
-
 # Utilities
 regex = "1"
 rand = "0.8"

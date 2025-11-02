@@ -60,10 +60,19 @@ impl Server {
         Self { config, state }
     }
 
+    /// Create a new server instance with custom state
+    pub fn with_state(config: ServerConfig, state: AppState) -> Self {
+        Self {
+            config,
+            state: Arc::new(state),
+        }
+    }
+
     /// Build the Axum router with all routes and middleware
     fn build_router(&self) -> Router {
         Router::new()
             .merge(routes::health::routes())
+            .merge(routes::webhooks::routes())
             .layer(TraceLayer::new_for_http())
             .layer(middleware::request_id::RequestIdLayer)
             .with_state(self.state.clone())
