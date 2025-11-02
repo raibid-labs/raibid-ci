@@ -694,9 +694,9 @@ mod tests {
         // This should work on most modern Linux systems
         #[cfg(target_os = "linux")]
         {
-            let result = cgroup_v2_available();
+            let _result = cgroup_v2_available();
             // Just ensure it returns a boolean without panicking
-            assert!(result || !result);
+            // No assertion needed - we just want to verify it doesn't panic
         }
 
         #[cfg(not(target_os = "linux"))]
