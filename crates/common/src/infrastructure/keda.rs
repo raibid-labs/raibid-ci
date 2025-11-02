@@ -699,8 +699,10 @@ mod tests {
     #[test]
     fn test_scaled_object_yaml_with_job_target() {
         let installer = KedaInstaller::new().unwrap();
-        let mut config = ScaledObjectConfig::default();
-        config.target_kind = TargetKind::Job;
+        let config = ScaledObjectConfig {
+            target_kind: TargetKind::Job,
+            ..Default::default()
+        };
 
         let yaml = installer.generate_scaled_object_yaml(&config);
 
