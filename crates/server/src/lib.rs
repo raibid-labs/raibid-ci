@@ -72,7 +72,6 @@ impl Server {
     fn build_router(&self) -> Router {
         Router::new()
             .merge(routes::health::routes())
-            .merge(routes::jobs::routes())
             .merge(routes::webhooks::routes())
             .layer(TraceLayer::new_for_http())
             .layer(middleware::request_id::RequestIdLayer)
