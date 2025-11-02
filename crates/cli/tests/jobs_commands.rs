@@ -4,7 +4,6 @@
 //! with various inputs and produce the expected outputs.
 
 use assert_cmd::Command;
-use assert_cmd::assert::OutputAssertExt;
 use predicates::prelude::*;
 
 /// Test that the jobs command shows help when no subcommand is provided

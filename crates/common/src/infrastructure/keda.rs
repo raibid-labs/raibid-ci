@@ -714,9 +714,11 @@ mod tests {
 
     #[test]
     fn test_custom_config() {
-        let mut config = KedaConfig::default();
-        config.log_level = "debug".to_string();
-        config.metrics_server_enabled = false;
+        let config = KedaConfig {
+            log_level: "debug".to_string(),
+            metrics_server_enabled: false,
+            ..Default::default()
+        };
 
         let installer = KedaInstaller::with_config(config.clone());
         assert!(installer.is_ok());
@@ -728,10 +730,12 @@ mod tests {
 
     #[test]
     fn test_scaled_object_config_customization() {
-        let mut config = ScaledObjectConfig::default();
-        config.min_replica_count = 2;
-        config.max_replica_count = 20;
-        config.pending_entries_count = "5".to_string();
+        let config = ScaledObjectConfig {
+            min_replica_count: 2,
+            max_replica_count: 20,
+            pending_entries_count: "5".to_string(),
+            ..Default::default()
+        };
 
         assert_eq!(config.min_replica_count, 2);
         assert_eq!(config.max_replica_count, 20);
