@@ -3,8 +3,8 @@
 //! These tests verify that the job management commands work correctly
 //! with various inputs and produce the expected outputs.
 
-use assert_cmd::Command;
 use predicates::prelude::*;
+use std::process::Command;
 
 /// Test that the jobs command shows help when no subcommand is provided
 #[test]
