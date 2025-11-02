@@ -14,7 +14,7 @@ use std::process::Command;
 /// Test job list command
 #[test]
 fn test_job_list() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("list")
@@ -27,7 +27,7 @@ fn test_job_list() {
 /// Test job list with status filter
 #[test]
 fn test_job_list_status_filter() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("list")
@@ -40,7 +40,7 @@ fn test_job_list_status_filter() {
 /// Test job list with repo filter
 #[test]
 fn test_job_list_repo_filter() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("list")
@@ -53,7 +53,7 @@ fn test_job_list_repo_filter() {
 /// Test job list with limit
 #[test]
 fn test_job_list_limit() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("list")
@@ -66,7 +66,7 @@ fn test_job_list_limit() {
 /// Test job list JSON output
 #[test]
 fn test_job_list_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("list")
@@ -81,7 +81,7 @@ fn test_job_list_json() {
 /// Test job show command
 #[test]
 fn test_job_show() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("show")
@@ -95,7 +95,7 @@ fn test_job_show() {
 /// Test job show with invalid ID
 #[test]
 fn test_job_show_invalid_id() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("show")
@@ -108,7 +108,7 @@ fn test_job_show_invalid_id() {
 /// Test job show JSON output
 #[test]
 fn test_job_show_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("show")
@@ -124,7 +124,7 @@ fn test_job_show_json() {
 /// Test job cancel with force flag
 #[test]
 fn test_job_cancel_force() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("cancel")
@@ -138,7 +138,7 @@ fn test_job_cancel_force() {
 /// Test job retry command
 #[test]
 fn test_job_retry() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("retry")
@@ -152,7 +152,7 @@ fn test_job_retry() {
 /// Test job retry with invalid ID
 #[test]
 fn test_job_retry_invalid_id() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("retry")
@@ -164,7 +164,7 @@ fn test_job_retry_invalid_id() {
 /// Test job command help
 #[test]
 fn test_job_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("job")
         .arg("--help")
@@ -180,7 +180,7 @@ fn test_job_help() {
 /// Test agent list command
 #[test]
 fn test_agent_list() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("list")
@@ -193,7 +193,7 @@ fn test_agent_list() {
 /// Test agent list with status filter
 #[test]
 fn test_agent_list_status_filter() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("list")
@@ -206,7 +206,7 @@ fn test_agent_list_status_filter() {
 /// Test agent list JSON output
 #[test]
 fn test_agent_list_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("list")
@@ -221,7 +221,7 @@ fn test_agent_list_json() {
 /// Test agent show command
 #[test]
 fn test_agent_show() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("show")
@@ -235,7 +235,7 @@ fn test_agent_show() {
 /// Test agent show with invalid ID
 #[test]
 fn test_agent_show_invalid_id() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("show")
@@ -248,7 +248,7 @@ fn test_agent_show_invalid_id() {
 /// Test agent show JSON output
 #[test]
 fn test_agent_show_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("show")
@@ -264,7 +264,7 @@ fn test_agent_show_json() {
 /// Test agent restart with force flag
 #[test]
 fn test_agent_restart_force() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("restart")
@@ -278,7 +278,7 @@ fn test_agent_restart_force() {
 /// Test agent restart with invalid ID
 #[test]
 fn test_agent_restart_invalid_id() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("restart")
@@ -291,7 +291,7 @@ fn test_agent_restart_invalid_id() {
 /// Test agent scale command
 #[test]
 fn test_agent_scale() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("scale")
@@ -305,7 +305,7 @@ fn test_agent_scale() {
 /// Test agent scale with min and max
 #[test]
 fn test_agent_scale_min_max() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("scale")
@@ -322,7 +322,7 @@ fn test_agent_scale_min_max() {
 /// Test agent scale with count below minimum
 #[test]
 fn test_agent_scale_below_minimum() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("scale")
@@ -338,7 +338,7 @@ fn test_agent_scale_below_minimum() {
 /// Test agent scale with count above maximum
 #[test]
 fn test_agent_scale_above_maximum() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("scale")
@@ -354,7 +354,7 @@ fn test_agent_scale_above_maximum() {
 /// Test agent command help
 #[test]
 fn test_agent_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("agent")
         .arg("--help")
@@ -370,7 +370,7 @@ fn test_agent_help() {
 /// Test mirror add command
 #[test]
 fn test_mirror_add() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("add")
@@ -383,7 +383,7 @@ fn test_mirror_add() {
 /// Test mirror add with custom name
 #[test]
 fn test_mirror_add_with_name() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("add")
@@ -398,7 +398,7 @@ fn test_mirror_add_with_name() {
 /// Test mirror add with sync interval
 #[test]
 fn test_mirror_add_with_interval() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("add")
@@ -413,7 +413,7 @@ fn test_mirror_add_with_interval() {
 /// Test mirror list command
 #[test]
 fn test_mirror_list() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("list")
@@ -426,7 +426,7 @@ fn test_mirror_list() {
 /// Test mirror list JSON output
 #[test]
 fn test_mirror_list_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("list")
@@ -441,7 +441,7 @@ fn test_mirror_list_json() {
 /// Test mirror sync command
 #[test]
 fn test_mirror_sync() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("sync")
@@ -454,7 +454,7 @@ fn test_mirror_sync() {
 /// Test mirror sync with force flag
 #[test]
 fn test_mirror_sync_force() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("sync")
@@ -468,7 +468,7 @@ fn test_mirror_sync_force() {
 /// Test mirror sync with invalid repo
 #[test]
 fn test_mirror_sync_invalid_repo() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("sync")
@@ -481,7 +481,7 @@ fn test_mirror_sync_invalid_repo() {
 /// Test mirror remove with force flag
 #[test]
 fn test_mirror_remove_force() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("remove")
@@ -495,7 +495,7 @@ fn test_mirror_remove_force() {
 /// Test mirror remove with invalid repo
 #[test]
 fn test_mirror_remove_invalid_repo() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("remove")
@@ -509,7 +509,7 @@ fn test_mirror_remove_invalid_repo() {
 /// Test mirror command help
 #[test]
 fn test_mirror_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("mirror")
         .arg("--help")

@@ -265,8 +265,7 @@ fn test_arm64_cross_compilation_path() {
 fn test_assert_cmd_finds_binary() {
     // This should work regardless of CARGO_TARGET_DIR because assert_cmd
     // uses cargo's metadata to find the binary
-    let mut cmd = Command::cargo_bin("raibid-cli")
-        .expect("Failed to find binary with cargo_bin()");
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"));
 
     cmd.arg("--version")
         .assert()

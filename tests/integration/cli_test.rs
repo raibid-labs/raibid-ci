@@ -11,14 +11,14 @@ use std::process::Command;
 /// Test that the binary can be invoked
 #[test]
 fn test_cli_binary_exists() {
-    let mut cmd = Command::cargo_bin("raibid-cli").unwrap();
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"));
     cmd.assert();
 }
 
 /// Test --version flag
 #[test]
 fn test_version_flag() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--version")
         .assert()
@@ -29,7 +29,7 @@ fn test_version_flag() {
 /// Test short version flag
 #[test]
 fn test_version_flag_short() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("-V")
         .assert()
@@ -40,7 +40,7 @@ fn test_version_flag_short() {
 /// Test --help flag
 #[test]
 fn test_help_flag() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--help")
         .assert()
@@ -52,7 +52,7 @@ fn test_help_flag() {
 /// Test short help flag
 #[test]
 fn test_help_flag_short() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("-h")
         .assert()
@@ -63,7 +63,7 @@ fn test_help_flag_short() {
 /// Test running without arguments shows helpful message
 #[test]
 fn test_no_arguments() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .assert()
         .failure()
@@ -73,7 +73,7 @@ fn test_no_arguments() {
 /// Test verbose flag is recognized
 #[test]
 fn test_verbose_flag() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--verbose")
         .assert()
@@ -83,7 +83,7 @@ fn test_verbose_flag() {
 /// Test that help shows information about the tool
 #[test]
 fn test_help_shows_description() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--help")
         .assert()

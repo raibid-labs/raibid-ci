@@ -14,7 +14,7 @@ use std::process::Command;
 /// Test setup command with k3s component
 #[test]
 fn test_setup_k3s() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("k3s")
@@ -28,7 +28,7 @@ fn test_setup_k3s() {
 /// Test setup command with gitea component
 #[test]
 fn test_setup_gitea() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("gitea")
@@ -41,7 +41,7 @@ fn test_setup_gitea() {
 /// Test setup command with redis component
 #[test]
 fn test_setup_redis() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("redis")
@@ -53,7 +53,7 @@ fn test_setup_redis() {
 /// Test setup command with keda component
 #[test]
 fn test_setup_keda() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("keda")
@@ -65,7 +65,7 @@ fn test_setup_keda() {
 /// Test setup command with flux component
 #[test]
 fn test_setup_flux() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("flux")
@@ -77,7 +77,7 @@ fn test_setup_flux() {
 /// Test setup command with all components
 #[test]
 fn test_setup_all() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("all")
@@ -94,7 +94,7 @@ fn test_setup_all() {
 /// Test setup command without component argument shows error
 #[test]
 fn test_setup_no_component() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .assert()
@@ -104,7 +104,7 @@ fn test_setup_no_component() {
 /// Test setup command shows dependency information
 #[test]
 fn test_setup_shows_dependencies() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("gitea")
@@ -116,7 +116,7 @@ fn test_setup_shows_dependencies() {
 /// Test setup command shows pre-flight checks
 #[test]
 fn test_setup_preflight_checks() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("k3s")
@@ -132,7 +132,7 @@ fn test_setup_preflight_checks() {
 /// Test setup command with verbose flag
 #[test]
 fn test_setup_verbose() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--verbose")
         .arg("setup")
@@ -148,7 +148,7 @@ fn test_setup_verbose() {
 /// Test teardown command with k3s component
 #[test]
 fn test_teardown_k3s() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("k3s")
@@ -161,7 +161,7 @@ fn test_teardown_k3s() {
 /// Test teardown command with gitea component
 #[test]
 fn test_teardown_gitea() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("gitea")
@@ -173,7 +173,7 @@ fn test_teardown_gitea() {
 /// Test teardown command with redis component
 #[test]
 fn test_teardown_redis() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("redis")
@@ -185,7 +185,7 @@ fn test_teardown_redis() {
 /// Test teardown command with keda component
 #[test]
 fn test_teardown_keda() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("keda")
@@ -197,7 +197,7 @@ fn test_teardown_keda() {
 /// Test teardown command with flux component
 #[test]
 fn test_teardown_flux() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("flux")
@@ -209,7 +209,7 @@ fn test_teardown_flux() {
 /// Test teardown command with all components
 #[test]
 fn test_teardown_all() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("all")
@@ -226,7 +226,7 @@ fn test_teardown_all() {
 /// Test teardown command without component argument shows error
 #[test]
 fn test_teardown_no_component() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .assert()
@@ -236,7 +236,7 @@ fn test_teardown_no_component() {
 /// Test teardown command shows what will be removed
 #[test]
 fn test_teardown_shows_removal_info() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("k3s")
@@ -252,7 +252,7 @@ fn test_teardown_shows_removal_info() {
 /// Test teardown command with verbose flag
 #[test]
 fn test_teardown_verbose() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--verbose")
         .arg("teardown")
@@ -268,7 +268,7 @@ fn test_teardown_verbose() {
 /// Test status command with k3s component
 #[test]
 fn test_status_k3s() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("k3s")
@@ -280,7 +280,7 @@ fn test_status_k3s() {
 /// Test status command with gitea component
 #[test]
 fn test_status_gitea() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("gitea")
@@ -292,7 +292,7 @@ fn test_status_gitea() {
 /// Test status command with redis component
 #[test]
 fn test_status_redis() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("redis")
@@ -304,7 +304,7 @@ fn test_status_redis() {
 /// Test status command with keda component
 #[test]
 fn test_status_keda() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("keda")
@@ -316,7 +316,7 @@ fn test_status_keda() {
 /// Test status command with flux component
 #[test]
 fn test_status_flux() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("flux")
@@ -328,7 +328,7 @@ fn test_status_flux() {
 /// Test status command with all components
 #[test]
 fn test_status_all() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("all")
@@ -344,7 +344,7 @@ fn test_status_all() {
 /// Test status command without component shows all
 #[test]
 fn test_status_no_component_shows_all() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .assert()
@@ -356,7 +356,7 @@ fn test_status_no_component_shows_all() {
 /// Test status command shows version information
 #[test]
 fn test_status_shows_version() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("k3s")
@@ -368,7 +368,7 @@ fn test_status_shows_version() {
 /// Test status command shows state information
 #[test]
 fn test_status_shows_state() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("k3s")
@@ -384,7 +384,7 @@ fn test_status_shows_state() {
 /// Test status command shows resource usage
 #[test]
 fn test_status_shows_resource_usage() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("k3s")
@@ -400,7 +400,7 @@ fn test_status_shows_resource_usage() {
 /// Test status command with verbose flag
 #[test]
 fn test_status_verbose() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("--verbose")
         .arg("status")
@@ -416,7 +416,7 @@ fn test_status_verbose() {
 /// Test setup command help
 #[test]
 fn test_setup_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("setup")
         .arg("--help")
@@ -428,7 +428,7 @@ fn test_setup_help() {
 /// Test teardown command help
 #[test]
 fn test_teardown_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("teardown")
         .arg("--help")
@@ -442,7 +442,7 @@ fn test_teardown_help() {
 /// Test status command help
 #[test]
 fn test_status_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("status")
         .arg("--help")

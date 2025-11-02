@@ -18,7 +18,7 @@ fn test_config_init() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("raibid.yaml");
 
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -38,7 +38,7 @@ fn test_config_init_minimal() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("minimal.yaml");
 
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -62,7 +62,7 @@ fn test_config_init_force() {
     std::fs::write(&config_path, "initial content").unwrap();
 
     // Overwrite with force flag
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -83,7 +83,7 @@ fn test_config_init_no_force_fails() {
     std::fs::write(&config_path, "initial content").unwrap();
 
     // Try to overwrite without force flag (should fail)
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -100,7 +100,7 @@ fn test_config_init_creates_valid_yaml() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("raibid.yaml");
 
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -127,7 +127,7 @@ fn test_config_init_creates_valid_yaml() {
 /// Test config show command (YAML format)
 #[test]
 fn test_config_show_yaml() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -140,7 +140,7 @@ fn test_config_show_yaml() {
 /// Test config show with JSON format
 #[test]
 fn test_config_show_json() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -155,7 +155,7 @@ fn test_config_show_json() {
 /// Test config show with TOML format
 #[test]
 fn test_config_show_toml() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -173,7 +173,7 @@ fn test_config_show_specific_file() {
     let config_path = temp_dir.path().join("raibid.yaml");
 
     // Create a config file first
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -183,7 +183,7 @@ fn test_config_show_specific_file() {
         .success();
 
     // Show specific file
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -197,7 +197,7 @@ fn test_config_show_specific_file() {
 /// Test config show with invalid format
 #[test]
 fn test_config_show_invalid_format() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -214,7 +214,7 @@ fn test_config_show_invalid_format() {
 /// Test config validate with default config
 #[test]
 fn test_config_validate_default() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("validate")
@@ -230,7 +230,7 @@ fn test_config_validate_specific_file() {
     let config_path = temp_dir.path().join("raibid.yaml");
 
     // Create a valid config file first
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -240,7 +240,7 @@ fn test_config_validate_specific_file() {
         .success();
 
     // Validate the file
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("validate")
@@ -260,7 +260,7 @@ fn test_config_validate_invalid_file() {
     std::fs::write(&config_path, "invalid: yaml: content: [").unwrap();
 
     // Validate should fail
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("validate")
@@ -272,7 +272,7 @@ fn test_config_validate_invalid_file() {
 /// Test config validate with non-existent file
 #[test]
 fn test_config_validate_nonexistent_file() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("validate")
@@ -288,7 +288,7 @@ fn test_config_validate_nonexistent_file() {
 /// Test config path command
 #[test]
 fn test_config_path() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("path")
@@ -306,7 +306,7 @@ fn test_config_path() {
 /// Test config command help
 #[test]
 fn test_config_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("--help")
@@ -318,7 +318,7 @@ fn test_config_help() {
 /// Test config init help
 #[test]
 fn test_config_init_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -331,7 +331,7 @@ fn test_config_init_help() {
 /// Test config show help
 #[test]
 fn test_config_show_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("show")
@@ -344,7 +344,7 @@ fn test_config_show_help() {
 /// Test config validate help
 #[test]
 fn test_config_validate_help() {
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("validate")
@@ -363,7 +363,7 @@ fn test_config_validate_help() {
 fn test_config_env_var_override() {
     // This test verifies that the CLI recognizes environment variables
     // The actual override behavior is tested in unit tests
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .env("RAIBID_API_HOST", "custom-host")
         .env("RAIBID_API_PORT", "9090")
@@ -384,7 +384,7 @@ fn test_config_file_priority() {
     let local_config = temp_dir.path().join("raibid.yaml");
 
     // Create a local config
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .arg("config")
         .arg("init")
@@ -394,7 +394,7 @@ fn test_config_file_priority() {
         .success();
 
     // Show config (should load the local one if we're in that directory)
-    Command::cargo_bin("raibid-cli")
+    Command::new(assert_cmd::cargo::cargo_bin!("raibid-cli"))
         .unwrap()
         .current_dir(temp_dir.path())
         .arg("config")
