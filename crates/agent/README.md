@@ -1,405 +1,292 @@
-# raibid-ci Agent Container
+# raibid-agent
 
-Ephemeral CI agent container image for executing Rust builds on NVIDIA DGX Spark.
+CI agent runner that executes build pipelines from the job queue.
 
 ## Overview
 
-This container provides a complete Rust build environment optimized for ARM64 architecture with:
+The raibid-agent crate provides the core build pipeline execution engine for the raibid-ci system. It handles:
 
-- **Rust toolchain** (stable, with rustfmt and clippy)
-- **Cargo tools** (nextest, audit, deny)
-- **Docker CLI** for container image builds
-- **Git** with LFS support
-- **Multi-stage build** for minimal image size
-- **BuildKit caching** for fast rebuilds
-- **Health checks** for container orchestration
+- Complete Rust build pipeline execution
+- Job polling from Redis Streams (planned)
+- Build cache management with sccache
+- Docker image building and publishing
+- Real-time log streaming to Redis
+- Artifact metadata tracking
 
-## Image Details
+## Features
 
-### Base Image
-- **Base**: `rust:1.82-bookworm`
-- **Architecture**: ARM64 (aarch64)
-- **OS**: Debian 12 (Bookworm)
+### Build Pipeline
 
-### Installed Tools
+The agent executes a comprehensive Rust build pipeline:
 
-#### System Dependencies
-- Git 2.39+ with Git LFS
-- OpenSSH client
-- Docker CLI (latest stable)
-- Build essentials (gcc, make, pkg-config)
-- SSL/TLS libraries (OpenSSL)
+1. **Check** - Verify code compilation (`cargo check`)
+2. **Format** - Check code formatting (`cargo fmt --check`)
+3. **Clippy** - Run lints (`cargo clippy`)
+4. **Test** - Run test suite (`cargo test`)
+5. **Build** - Build release binary (`cargo build --release`)
+6. **Audit** - Security audit (`cargo audit`)
+7. **Docker Build** - Build container image (optional)
+8. **Docker Push** - Push to registry (optional)
 
-#### Rust Toolchain
-- Rust 1.82 (stable)
-- Cargo
-- Rustfmt
-- Clippy
+### Timeouts
 
-#### Cargo Tools
-- **cargo-nextest** (0.9.72): Advanced test runner with better reporting
-- **cargo-audit** (0.20.0): Security vulnerability scanner
-- **cargo-deny** (0.14.24): License and dependency checker
+- **Step timeout**: 5 minutes per step
+- **Pipeline timeout**: 30 minutes total
 
-### Image Size
+Steps that exceed the timeout are automatically terminated.
 
-**Target**: < 1.5 GB (1536 MB)
+### Log Streaming
 
-The multi-stage build optimizes image size by:
-1. Building cargo tools in a separate stage
-2. Copying only the compiled binaries to the final image
-3. Removing package manager caches
-4. Using minimal base images
+Build logs are streamed in real-time to Redis Streams for consumption by the TUI and API:
 
-## Building the Image
+```
+raibid:logs:{job_id}
+```
 
-### Quick Start
+Each log entry includes:
+- `timestamp` - ISO 8601 timestamp
+- `message` - Log line from stdout/stderr
+
+### Job Status Updates
+
+The pipeline updates job status in Redis at key points:
+
+```
+raibid:job:{job_id}
+```
+
+Status values:
+- `running` - Pipeline is executing
+- `success` - Pipeline completed successfully
+- `failed` - Pipeline failed
+
+### Artifact Metadata
+
+Build artifacts are tracked in Redis with metadata:
+
+```
+raibid:artifacts:{job_id}
+```
+
+Metadata includes:
+- Docker image name and tag
+- Binary artifacts produced
+- Build timestamp
+
+## Usage
+
+### Basic Pipeline Execution
+
+```rust
+use raibid_agent::{PipelineConfig, PipelineExecutor};
+use std::path::PathBuf;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Configure pipeline
+    let config = PipelineConfig {
+        job_id: "job-abc123".to_string(),
+        repo_path: PathBuf::from("/workspace/repo"),
+        use_sccache: true,
+        registry_url: Some("https://gitea.example.com".to_string()),
+        image_tag: Some("myapp:v1.0.0".to_string()),
+        redis_url: Some("redis://localhost:6379".to_string()),
+    };
+
+    // Create executor
+    let executor = PipelineExecutor::new(config)?;
+
+    // Execute pipeline
+    let result = executor.execute().await?;
+
+    // Check results
+    if result.success {
+        println!("Pipeline succeeded in {}s", result.total_duration_secs);
+
+        if let Some(artifacts) = result.artifacts {
+            println!("Built image: {}", artifacts.image.unwrap());
+        }
+    } else {
+        println!("Pipeline failed");
+        for step in result.steps {
+            if !step.success {
+                println!("Failed step: {}", step.step);
+                println!("Output: {}", step.output);
+            }
+        }
+    }
+
+    Ok(())
+}
+```
+
+### With sccache Optimization
+
+Enable sccache for faster builds:
+
+```rust
+let config = PipelineConfig {
+    job_id: "job-123".to_string(),
+    repo_path: PathBuf::from("/workspace/repo"),
+    use_sccache: true,  // Enable sccache
+    // ... other config
+    redis_url: None,
+};
+```
+
+### Docker Image Building
+
+Build and push Docker images:
+
+```rust
+let config = PipelineConfig {
+    job_id: "job-123".to_string(),
+    repo_path: PathBuf::from("/workspace/repo"),
+    use_sccache: false,
+    registry_url: Some("https://gitea.example.com".to_string()),
+    image_tag: Some("myorg/myapp:latest".to_string()),
+    redis_url: None,
+};
+
+let executor = PipelineExecutor::new(config)?;
+let result = executor.execute().await?;
+
+if let Some(artifacts) = result.artifacts {
+    println!("Image: {}", artifacts.image.unwrap());
+    println!("Binaries: {:?}", artifacts.binaries);
+}
+```
+
+### Manual Job Status Updates
+
+Update job status independently:
+
+```rust
+executor.update_job_status("running", None).await?;
+// ... execute work ...
+executor.update_job_status("success", Some(0)).await?;
+```
+
+### Store Artifact Metadata
+
+```rust
+use raibid_agent::ArtifactMetadata;
+
+let artifacts = ArtifactMetadata {
+    image: Some("myapp:v1.0.0".to_string()),
+    binaries: vec!["myapp".to_string()],
+    built_at: chrono::Utc::now().to_rfc3339(),
+};
+
+executor.store_artifacts(&artifacts).await?;
+```
+
+## Pipeline Result Structure
+
+```rust
+pub struct PipelineResult {
+    pub job_id: String,
+    pub success: bool,
+    pub steps: Vec<StepResult>,
+    pub total_duration_secs: u64,
+    pub artifacts: Option<ArtifactMetadata>,
+}
+
+pub struct StepResult {
+    pub step: String,
+    pub success: bool,
+    pub exit_code: Option<i32>,
+    pub duration_secs: u64,
+    pub output: String,  // First 10KB of output
+}
+```
+
+## Environment Variables
+
+The pipeline respects these environment variables:
+
+- `RUSTC_WRAPPER` - Set to `sccache` when `use_sccache` is enabled
+- Standard Rust/Cargo environment variables
+
+## Testing
+
+### Unit Tests
 
 ```bash
-# Basic build (local)
-./build.sh
-
-# Build and push to Gitea registry
-./build.sh --registry gitea.local:3000/raibid --push
-
-# Build with cache optimization
-./build.sh \
-  --cache-from gitea.local:3000/raibid/cache:agent \
-  --cache-to gitea.local:3000/raibid/cache:agent \
-  --push
+cargo test --package raibid-agent --lib
 ```
 
-### Build Script Options
+### Integration Tests
+
+Integration tests require cargo to be installed:
 
 ```bash
-./build.sh [OPTIONS]
-
-OPTIONS:
-  -n, --name NAME         Image name (default: raibid-ci-agent)
-  -t, --tag TAG           Image tag (default: latest)
-  -r, --registry URL      Registry URL (default: localhost:5000)
-  -p, --platform PLATFORM Target platform (default: linux/arm64)
-  --cache-from REF        Cache source reference
-  --cache-to REF          Cache destination reference
-  --build-arg ARG         Additional build arguments
-  --push                  Push to registry after build
-  -h, --help              Show this help message
+cargo test --package raibid-agent --test pipeline_integration -- --ignored
 ```
 
-### Environment Variables
+### Redis Integration Tests
+
+Tests requiring Redis are marked as ignored:
 
 ```bash
-IMAGE_NAME=my-agent      # Override image name
-IMAGE_TAG=v1.0.0         # Override image tag
-REGISTRY=my-registry     # Override registry URL
-PLATFORM=linux/amd64     # Override platform (for testing)
-PUSH=true                # Auto-push after build
+REDIS_URL=redis://localhost:6379 \
+cargo test --package raibid-agent -- --ignored test_pipeline_with_redis
 ```
 
-## Running the Container
+## Architecture
 
-### Interactive Shell
+### Pipeline Execution Flow
 
-```bash
-docker run -it --rm \
-  --platform linux/arm64 \
-  localhost:5000/raibid-ci-agent:latest \
-  /bin/bash
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Pipeline Executor                        │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 1: Check    │ cargo check --all-features                   │
+│ Step 2: Format   │ cargo fmt -- --check                         │
+│ Step 3: Clippy   │ cargo clippy --all-features -- -D warnings   │
+│ Step 4: Test     │ cargo test --all-features                    │
+│ Step 5: Build    │ cargo build --release                        │
+│ Step 6: Audit    │ cargo audit                                  │
+│ Step 7: Docker   │ docker build -t <tag> .                      │
+│ Step 8: Push     │ docker push <tag>                            │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                           Redis                                  │
+│  • raibid:logs:{job_id}     - Build logs (stream)              │
+│  • raibid:job:{job_id}      - Job status (hash)                │
+│  • raibid:artifacts:{job_id} - Artifact metadata (string)       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Health Check
-
-```bash
-docker run --rm \
-  --platform linux/arm64 \
-  localhost:5000/raibid-ci-agent:latest \
-  /usr/local/bin/healthcheck.sh
-```
-
-### With Docker Socket (for building images)
-
-```bash
-docker run -it --rm \
-  --platform linux/arm64 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  localhost:5000/raibid-ci-agent:latest \
-  /bin/bash
-```
-
-### With Build Cache Volume
-
-```bash
-docker run -it --rm \
-  --platform linux/arm64 \
-  -v cargo-cache:/home/agent/.cargo \
-  -v build-cache:/workspace/target \
-  localhost:5000/raibid-ci-agent:latest \
-  /bin/bash
-```
-
-## BuildKit Caching
-
-The image uses Docker BuildKit for optimal caching:
-
-### Local Cache
-
-```bash
-# Local filesystem cache
-docker buildx build \
-  --cache-from type=local,src=/tmp/buildkit-cache \
-  --cache-to type=local,dest=/tmp/buildkit-cache,mode=max \
-  .
-```
-
-### Registry Cache
-
-```bash
-# Remote registry cache (recommended for CI)
-docker buildx build \
-  --cache-from type=registry,ref=gitea.local:3000/raibid/cache:agent \
-  --cache-to type=registry,ref=gitea.local:3000/raibid/cache:agent,mode=max \
-  .
-```
-
-### Cache Modes
-
-- **mode=min**: Cache only final image layers (default)
-- **mode=max**: Cache all intermediate layers (recommended)
-
-## Health Check
-
-The container includes a comprehensive health check script that verifies:
-
-- ✓ Core system tools (git, ssh, docker)
-- ✓ Rust toolchain (rustc, cargo, rustfmt, clippy)
-- ✓ Cargo tools (nextest, audit, deny)
-- ✓ Version information
-- ✓ Git configuration
-- ✓ Filesystem permissions
-- ✓ Environment variables
-
-Health check is automatically run by container orchestration systems.
-
-## Container Configuration
-
-### User and Permissions
-
-- **User**: `agent` (UID: 1000, GID: 1000)
-- **Home**: `/home/agent`
-- **Workspace**: `/workspace`
-- **Cargo Home**: `/home/agent/.cargo`
-
-### Environment Variables
-
-```bash
-RUST_BACKTRACE=1                    # Enable Rust backtraces
-CARGO_HOME=/home/agent/.cargo       # Cargo cache directory
-CARGO_TARGET_DIR=/workspace/target  # Build output directory
-CARGO_INCREMENTAL=1                 # Enable incremental compilation
-```
-
-### Volumes (Recommended)
-
-```yaml
-volumes:
-  - cargo-cache:/home/agent/.cargo      # Cargo registry and build cache
-  - build-cache:/workspace/target       # Compiled artifacts
-  - /var/run/docker.sock:/var/run/docker.sock  # Docker socket (if needed)
-```
-
-## Kubernetes Deployment
-
-### Example Pod Spec
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: raibid-agent
-spec:
-  containers:
-  - name: agent
-    image: gitea.local:3000/raibid/raibid-ci-agent:latest
-    imagePullPolicy: Always
-    resources:
-      requests:
-        memory: "2Gi"
-        cpu: "1000m"
-      limits:
-        memory: "4Gi"
-        cpu: "2000m"
-    env:
-    - name: REDIS_URL
-      value: "redis://redis-master:6379"
-    - name: GITEA_URL
-      value: "https://gitea.local:3000"
-    volumeMounts:
-    - name: cargo-cache
-      mountPath: /home/agent/.cargo
-    - name: workspace
-      mountPath: /workspace
-  volumes:
-  - name: cargo-cache
-    persistentVolumeClaim:
-      claimName: agent-cargo-cache
-  - name: workspace
-    emptyDir: {}
-```
-
-## Development
-
-### Testing Locally
-
-```bash
-# 1. Build the image
-./build.sh
-
-# 2. Run health check
-docker run --rm localhost:5000/raibid-ci-agent:latest /usr/local/bin/healthcheck.sh
-
-# 3. Test Rust build
-docker run --rm -v $(pwd)/examples:/workspace localhost:5000/raibid-ci-agent:latest \
-  bash -c "cd /workspace && cargo build --release"
-
-# 4. Test cargo-nextest
-docker run --rm -v $(pwd)/examples:/workspace localhost:5000/raibid-ci-agent:latest \
-  bash -c "cd /workspace && cargo nextest run"
-```
-
-### Debugging
-
-```bash
-# Interactive shell with all mounts
-docker run -it --rm \
-  -v $(pwd):/workspace \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v cargo-cache:/home/agent/.cargo \
-  --platform linux/arm64 \
-  localhost:5000/raibid-ci-agent:latest \
-  /bin/bash
-
-# Inside container:
-rustc --version
-cargo --version
-docker --version
-git --version
-cargo-nextest --version
-cargo-audit --version
-cargo-deny --version
-```
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-- name: Build Agent Image
-  run: |
-    cd crates/agent
-    ./build.sh \
-      --registry ghcr.io/raibid-labs \
-      --tag ${{ github.sha }} \
-      --push
-```
-
-### GitLab CI
-
-```yaml
-build-agent:
-  script:
-    - cd crates/agent
-    - ./build.sh --registry $CI_REGISTRY_IMAGE --tag $CI_COMMIT_SHA --push
-```
-
-### Gitea Actions
-
-```yaml
-- name: Build and Push
-  run: |
-    cd crates/agent
-    ./build.sh \
-      --registry gitea.local:3000/raibid \
-      --cache-from gitea.local:3000/raibid/cache:agent \
-      --cache-to gitea.local:3000/raibid/cache:agent \
-      --tag latest \
-      --push
-```
-
-## Troubleshooting
-
-### Image Too Large
-
-If the image exceeds 1.5 GB:
-
-1. Check for unnecessary dependencies in Dockerfile
-2. Verify multi-stage build is working correctly
-3. Ensure apt caches are being cleaned
-4. Consider using `--squash` flag (experimental)
-
-### BuildKit Not Available
-
-```bash
-# Enable BuildKit
-export DOCKER_BUILDKIT=1
-
-# Or use buildx
-docker buildx create --use
-```
-
-### Permission Errors
-
-The container runs as non-root user `agent` (UID 1000). If you encounter permission errors:
-
-```bash
-# Run as root for debugging (not recommended for production)
-docker run --user root ...
-
-# Fix volume permissions
-sudo chown -R 1000:1000 /path/to/volume
-```
-
-### Health Check Failing
-
-```bash
-# Run health check manually for detailed output
-docker run --rm localhost:5000/raibid-ci-agent:latest /usr/local/bin/healthcheck.sh
-
-# Check logs
-docker logs <container-id>
-```
-
-## Security Considerations
-
-- Container runs as non-root user (`agent`)
-- No sudo or privilege escalation available
-- Docker socket access requires explicit mounting
-- Secrets should be passed via environment variables or mounted secrets
-- Use registry authentication for private registries
-
-## Performance Optimization
-
-### Build Performance
-
-1. **Use BuildKit caching** with `mode=max`
-2. **Mount cargo cache** to persistent volume
-3. **Enable incremental compilation** (default)
-4. **Use cargo-nextest** for faster test execution
-
-### Runtime Performance
-
-1. **Set appropriate resource limits** (2 CPU, 4GB RAM recommended)
-2. **Use local registry** to reduce image pull time
-3. **Pre-pull images** on nodes for faster startup
-4. **Enable cargo build cache** persistence
+### Error Handling
+
+The pipeline stops on the first failed step. Each step result includes:
+- Exit code
+- Success/failure status
+- Captured output (stdout + stderr)
+- Duration
+
+## Future Enhancements
+
+- [ ] Incremental build support
+- [ ] Custom pipeline steps from `.raibid.yaml`
+- [ ] Parallel test execution
+- [ ] Build artifact uploading to S3/MinIO
+- [ ] Cache statistics and optimization
+- [ ] Multi-stage Docker builds
+- [ ] Cross-compilation support
+
+## Related Documentation
+
+- [CI Agent Component](../../docs/components/agent/README.md)
+- [Redis Usage Guide](../../docs/components/infrastructure/redis-usage.md)
+- [WS-02: CI Agent Core](../../docs/workstreams/02-ci-agent-core/README.md)
 
 ## License
 
 MIT OR Apache-2.0
-
-## Contributing
-
-See main repository [CONTRIBUTING.md](../../CONTRIBUTING.md)
-
-## Support
-
-File issues at: https://github.com/raibid-labs/raibid-ci/issues

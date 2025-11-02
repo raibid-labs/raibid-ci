@@ -695,8 +695,8 @@ mod tests {
         #[cfg(target_os = "linux")]
         {
             let _result = cgroup_v2_available();
-            let _result = cgroup_v2_available();
             // Just ensure it returns a boolean without panicking
+            // No assertion needed - we just want to verify it doesn't panic
         }
 
         #[cfg(not(target_os = "linux"))]

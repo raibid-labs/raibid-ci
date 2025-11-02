@@ -375,5 +375,5 @@ Potential improvements for post-MVP:
 ## Related Documentation
 
 - [Redis Installation](./redis-deployment.md) - Redis setup required for ScaledObject
-- [k3s Setup](./technology-research.md#1-k3s---lightweight-kubernetes-distribution) - Prerequisite
-- [Technology Research](./technology-research.md#4-keda---kubernetes-event-driven-autoscaling) - KEDA overview
+- [k3s Setup](../../technology-research.md#1-k3s---lightweight-kubernetes-distribution) - Prerequisite
+- [Technology Research](../../technology-research.md#4-keda---kubernetes-event-driven-autoscaling) - KEDA overview

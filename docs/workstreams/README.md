@@ -6,7 +6,7 @@ This directory organizes the project work into parallel workstreams for multi-ag
 
 **New to this project? Start here:**
 1. Read [`START_HERE.md`](./START_HERE.md) for multi-agent launch instructions
-2. Review [`docs/ORCHESTRATION.md`](../ORCHESTRATION.md) for complete orchestration guide
+2. Review [`docs/ORCHESTRATION.md`](../architecture/orchestration.md) for complete orchestration guide
 3. Launch Phase 1 agents (WS-01, WS-04, WS-05) immediately
 
 **TL;DR:** Use Claude Code's Task tool to spawn agents for each workstream. Each agent follows the TDD workflow in their workstream README.

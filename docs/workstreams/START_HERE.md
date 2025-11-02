@@ -7,7 +7,7 @@ You are about to orchestrate multiple AI agents to build the **raibid-ci** proje
 ## 📋 Quick Start
 
 ### Step 1: Read the Orchestration Guide
-**First, read this:** [`docs/ORCHESTRATION.md`](../ORCHESTRATION.md)
+**First, read this:** [`docs/ORCHESTRATION.md`](../architecture/orchestration.md)
 
 It contains:
 - Complete multi-agent launch instructions
@@ -193,7 +193,7 @@ Aim for:
 
 | Document | Purpose |
 |----------|---------|
-| [`ORCHESTRATION.md`](../ORCHESTRATION.md) | Complete orchestration guide |
+| [`ORCHESTRATION.md`](../architecture/orchestration.md) | Complete orchestration guide |
 | [`workstreams/README.md`](./README.md) | Workstream overview |
 | [`STRUCTURE.md`](./STRUCTURE.md) | Project structure |
 | [`diagrams/workstream-dependencies.md`](../diagrams/workstream-dependencies.md) | Dependency diagram |

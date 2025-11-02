@@ -156,17 +156,10 @@ cargo test --package server --test '*'
 cargo test --package server test_api
 ```
 
-## API Reference
 
-See [REST API Documentation](../../api/rest-api.md) for complete endpoint reference.
-
-See [WebSocket API Documentation](../../api/websocket.md) for WebSocket protocol.
 
 ## Related Documentation
 
-- [Architecture Overview](../../architecture/system-overview.md)
-- [Data Flow](../../architecture/data-flow.md)
-- [Authentication](../../architecture/security.md)
 - [WS-03 Workstream](../../workstreams/03-api-services/README.md)
 
 ## Coming Soon

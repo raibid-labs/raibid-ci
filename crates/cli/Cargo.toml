@@ -40,9 +40,18 @@ dialoguer = { workspace = true }
 # Async runtime
 tokio = { workspace = true }
 
+# HTTP client
+reqwest = { workspace = true }
+
+# Time and date
+chrono = { workspace = true }
+
 # Utilities
 shellexpand = { workspace = true }
 dirs = { workspace = true }
+
+# URL encoding for query parameters
+urlencoding = "2.1"
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

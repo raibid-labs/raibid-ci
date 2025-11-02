@@ -45,9 +45,9 @@ pub enum Commands {
         /// Component to show status for (k3s, gitea, redis, keda, flux, all)
         component: Option<String>,
     },
-    // Placeholder for future subcommands
-    // These will be added in future issues:
-    // - Job
+    /// Manage CI/CD jobs
+    Jobs(JobsCommand),
+    // Placeholder for future subcommands:
     // - Agent
     // - Mirror
 }
@@ -97,4 +97,95 @@ pub enum ConfigSubcommand {
 
     /// Show configuration file path
     Path,
+}
+
+/// Jobs management commands
+#[derive(Args, Debug)]
+pub struct JobsCommand {
+    #[command(subcommand)]
+    pub command: JobsSubcommand,
+}
+
+/// Jobs subcommands
+#[derive(Subcommand, Debug)]
+pub enum JobsSubcommand {
+    /// List jobs with optional filters
+    List {
+        /// Filter by status (pending, running, success, failed, cancelled)
+        #[arg(short, long)]
+        status: Option<String>,
+
+        /// Filter by repository name
+        #[arg(short, long)]
+        repo: Option<String>,
+
+        /// Filter by branch name
+        #[arg(short, long)]
+        branch: Option<String>,
+
+        /// Maximum number of jobs to return
+        #[arg(short, long, default_value = "25")]
+        limit: Option<usize>,
+
+        /// Offset for pagination
+        #[arg(short, long, default_value = "0")]
+        offset: Option<usize>,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show detailed information about a specific job
+    Show {
+        /// Job ID to show
+        job_id: String,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show logs for a specific job
+    Logs {
+        /// Job ID to show logs for
+        job_id: String,
+
+        /// Follow log output (stream new logs in real-time)
+        #[arg(short, long)]
+        follow: bool,
+
+        /// Number of lines to show from the end
+        #[arg(short, long)]
+        tail: Option<usize>,
+    },
+
+    /// Trigger a new job
+    Trigger {
+        /// Repository to build
+        #[arg(short, long)]
+        repo: String,
+
+        /// Branch to build
+        #[arg(short, long)]
+        branch: String,
+
+        /// Commit SHA to build (optional, defaults to latest)
+        #[arg(short, long)]
+        commit: Option<String>,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Cancel a running or pending job
+    Cancel {
+        /// Job ID to cancel
+        job_id: String,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
 }
