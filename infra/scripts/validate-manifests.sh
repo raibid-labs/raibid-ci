@@ -41,6 +41,18 @@ validate_k8s_schema() {
         return 0
     fi
 
+    # Skip k3s configuration files (not K8s manifests)
+    if [[ "$file" == */k3s/config.yaml ]] || [[ "$file" == */k3s/rootless-config.yaml ]]; then
+        echo -e "${YELLOW}SKIP${NC} (k3s config): $file"
+        return 0
+    fi
+
+    # Skip Taskfile (not a K8s manifest)
+    if [[ "$file" == */Taskfile.yml ]]; then
+        echo -e "${YELLOW}SKIP${NC} (Taskfile): $file"
+        return 0
+    fi
+
     # Check if kubeval is available
     if command -v kubeval &> /dev/null; then
         if kubeval --strict "$file" &> /dev/null; then
