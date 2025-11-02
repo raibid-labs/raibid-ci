@@ -30,9 +30,25 @@ pub enum ServerError {
     #[error("Configuration error: {0}")]
     Config(String),
 
+    /// Unauthorized error
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
+    /// Rate limit exceeded
+    #[error("Rate limit exceeded")]
+    RateLimitExceeded,
+
+    /// Redis error
+    #[error("Redis error: {0}")]
+    Redis(#[from] redis::RedisError),
+
     /// IO error
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    /// JSON parsing error
+    #[error("JSON parsing error: {0}")]
+    Json(#[from] serde_json::Error),
 }
 
 /// Error response for JSON API
@@ -56,7 +72,20 @@ impl IntoResponse for ServerError {
             ServerError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             ServerError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
             ServerError::Config(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            ServerError::Unauthorized(ref msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
+            ServerError::RateLimitExceeded => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Rate limit exceeded".to_string(),
+            ),
+            ServerError::Redis(ref err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Redis error: {}", err),
+            ),
             ServerError::Io(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            ServerError::Json(ref err) => (
+                StatusCode::BAD_REQUEST,
+                format!("JSON parsing error: {}", err),
+            ),
         };
 
         let body = Json(ErrorResponse {
@@ -83,6 +112,12 @@ mod tests {
     fn test_error_display() {
         let error = ServerError::NotFound("Resource not found".to_string());
         assert_eq!(error.to_string(), "Not found: Resource not found");
+    }
+
+    #[test]
+    fn test_unauthorized_error() {
+        let error = ServerError::Unauthorized("Invalid signature".to_string());
+        assert_eq!(error.to_string(), "Unauthorized: Invalid signature");
     }
 
     #[test]
