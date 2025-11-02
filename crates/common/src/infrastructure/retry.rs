@@ -4,9 +4,9 @@
 
 #![allow(dead_code)]
 
+use crate::infrastructure::error::{InfraError, InfraResult};
 use std::time::Duration;
 use tracing::{debug, warn};
-use crate::infrastructure::error::{InfraError, InfraResult};
 
 /// Retry configuration
 #[derive(Debug, Clone)]
@@ -75,8 +75,8 @@ impl RetryConfig {
             return Duration::from_secs(0);
         }
 
-        let mut delay = self.initial_delay.as_secs_f64()
-            * self.backoff_multiplier.powi(attempt as i32 - 1);
+        let mut delay =
+            self.initial_delay.as_secs_f64() * self.backoff_multiplier.powi(attempt as i32 - 1);
 
         // Cap at max delay
         if delay > self.max_delay.as_secs_f64() {
@@ -117,7 +117,10 @@ where
             );
             std::thread::sleep(delay);
         } else {
-            debug!("Attempting '{}' (attempt 1/{})", operation_name, config.max_attempts);
+            debug!(
+                "Attempting '{}' (attempt 1/{})",
+                operation_name, config.max_attempts
+            );
         }
 
         match f() {
@@ -146,12 +149,10 @@ where
     }
 
     // All retries exhausted
-    Err(last_error.unwrap_or_else(|| {
-        InfraError::Fatal {
-            component: operation_name.to_string(),
-            reason: "All retry attempts exhausted".to_string(),
-            context: vec![format!("Tried {} times", config.max_attempts)],
-        }
+    Err(last_error.unwrap_or_else(|| InfraError::Fatal {
+        component: operation_name.to_string(),
+        reason: "All retry attempts exhausted".to_string(),
+        context: vec![format!("Tried {} times", config.max_attempts)],
     }))
 }
 
@@ -179,7 +180,10 @@ where
             );
             tokio::time::sleep(delay).await;
         } else {
-            debug!("Attempting '{}' (attempt 1/{})", operation_name, config.max_attempts);
+            debug!(
+                "Attempting '{}' (attempt 1/{})",
+                operation_name, config.max_attempts
+            );
         }
 
         match f().await {
@@ -208,12 +212,10 @@ where
     }
 
     // All retries exhausted
-    Err(last_error.unwrap_or_else(|| {
-        InfraError::Fatal {
-            component: operation_name.to_string(),
-            reason: "All retry attempts exhausted".to_string(),
-            context: vec![format!("Tried {} times", config.max_attempts)],
-        }
+    Err(last_error.unwrap_or_else(|| InfraError::Fatal {
+        component: operation_name.to_string(),
+        reason: "All retry attempts exhausted".to_string(),
+        context: vec![format!("Tried {} times", config.max_attempts)],
     }))
 }
 
@@ -244,8 +246,12 @@ where
 
         match condition() {
             Ok(true) => {
-                debug!("Condition met for '{}' after {} attempts ({:?})",
-                       operation_name, attempt, start.elapsed());
+                debug!(
+                    "Condition met for '{}' after {} attempts ({:?})",
+                    operation_name,
+                    attempt,
+                    start.elapsed()
+                );
                 return Ok(());
             }
             Ok(false) => {
@@ -294,8 +300,12 @@ where
 
         match condition().await {
             Ok(true) => {
-                debug!("Condition met for '{}' after {} attempts ({:?})",
-                       operation_name, attempt, start.elapsed());
+                debug!(
+                    "Condition met for '{}' after {} attempts ({:?})",
+                    operation_name,
+                    attempt,
+                    start.elapsed()
+                );
                 return Ok(());
             }
             Ok(false) => {

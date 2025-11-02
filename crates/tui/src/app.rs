@@ -347,8 +347,7 @@ impl App {
                                 KeyCode::Char('r') => self.refresh(),
                                 KeyCode::Esc => {
                                     // Clear filters and search
-                                    if self.filter_status.is_some()
-                                        || !self.search_query.is_empty()
+                                    if self.filter_status.is_some() || !self.search_query.is_empty()
                                     {
                                         self.filter_status = None;
                                         self.search_query.clear();

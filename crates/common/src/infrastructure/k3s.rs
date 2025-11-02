@@ -3,7 +3,7 @@
 //! This module handles downloading, installing, and bootstrapping k3s clusters.
 //! It supports ARM64 Linux (DGX Spark) and macOS ARM64 platforms.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
@@ -176,18 +176,18 @@ impl K3sInstaller {
 
     /// Download k3s binary from GitHub releases
     pub async fn download_binary(&self) -> Result<PathBuf> {
-        info!("Downloading k3s {} for {:?}", self.config.version, self.platform);
+        info!(
+            "Downloading k3s {} for {:?}",
+            self.config.version, self.platform
+        );
 
         // Create download directory
-        fs::create_dir_all(&self.download_dir)
-            .context("Failed to create download directory")?;
+        fs::create_dir_all(&self.download_dir).context("Failed to create download directory")?;
 
         let binary_name = self.platform.binary_name();
         let download_url = format!(
             "{}/{}/{}",
-            K3S_GITHUB_RELEASE_URL,
-            self.config.version,
-            binary_name
+            K3S_GITHUB_RELEASE_URL, self.config.version, binary_name
         );
 
         let binary_path = self.download_dir.join("k3s");
@@ -206,12 +206,12 @@ impl K3sInstaller {
             ));
         }
 
-        let bytes = response.bytes()
+        let bytes = response
+            .bytes()
             .await
             .context("Failed to read k3s binary response")?;
 
-        let mut file = fs::File::create(&binary_path)
-            .context("Failed to create binary file")?;
+        let mut file = fs::File::create(&binary_path).context("Failed to create binary file")?;
 
         file.write_all(&bytes)
             .context("Failed to write binary file")?;
@@ -228,9 +228,7 @@ impl K3sInstaller {
         let checksum_name = self.platform.checksum_name();
         let checksum_url = format!(
             "{}/{}/{}",
-            K3S_GITHUB_RELEASE_URL,
-            self.config.version,
-            checksum_name
+            K3S_GITHUB_RELEASE_URL, self.config.version, checksum_name
         );
 
         debug!("Downloading checksums from: {}", checksum_url);
@@ -246,7 +244,8 @@ impl K3sInstaller {
             ));
         }
 
-        let checksums = response.text()
+        let checksums = response
+            .text()
             .await
             .context("Failed to read checksums response")?;
 
@@ -258,8 +257,8 @@ impl K3sInstaller {
         info!("Verifying binary checksum");
 
         // Calculate SHA256 of downloaded binary
-        let binary_data = fs::read(binary_path)
-            .context("Failed to read binary for checksum verification")?;
+        let binary_data =
+            fs::read(binary_path).context("Failed to read binary for checksum verification")?;
 
         let hash = sha256::digest(&binary_data);
 
@@ -303,8 +302,7 @@ impl K3sInstaller {
             .context("Failed to get binary metadata")?
             .permissions();
         perms.set_mode(0o755);
-        fs::set_permissions(&install_path, perms)
-            .context("Failed to set binary permissions")?;
+        fs::set_permissions(&install_path, perms).context("Failed to set binary permissions")?;
 
         info!("Binary installed to {:?}", install_path);
 
@@ -319,14 +317,12 @@ impl K3sInstaller {
         info!("Bootstrapping k3s cluster in {:?} mode", self.config.mode);
 
         // Pre-flight checks for rootless mode
-        if self.config.mode == K3sMode::Rootless {
-            if !cgroup_v2_available() {
-                warn!(
+        if self.config.mode == K3sMode::Rootless && !cgroup_v2_available() {
+            warn!(
                     "cgroup v2 is not available. Rootless mode requires pure cgroup v2.\n\
                     To enable cgroup v2, add 'systemd.unified_cgroup_hierarchy=1' to kernel parameters."
                 );
-                // Continue anyway - k3s will provide a better error message if it fails
-            }
+            // Continue anyway - k3s will provide a better error message if it fails
         }
 
         let k3s_path = self.config.install_dir.join("k3s");
@@ -359,9 +355,7 @@ impl K3sInstaller {
         // Start k3s server in background
         debug!("Starting k3s server: {:?}", cmd);
 
-        let mut child = cmd
-            .spawn()
-            .context("Failed to start k3s server")?;
+        let mut child = cmd.spawn().context("Failed to start k3s server")?;
 
         // Wait a bit for server to start
         std::thread::sleep(std::time::Duration::from_secs(5));
@@ -401,8 +395,7 @@ impl K3sInstaller {
 
         // Ensure .kube directory exists
         if let Some(parent) = self.config.kubeconfig_path.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create .kube directory")?;
+            fs::create_dir_all(parent).context("Failed to create .kube directory")?;
         }
 
         // Copy k3s kubeconfig to user location
@@ -440,10 +433,7 @@ impl K3sInstaller {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(anyhow!(
-                "kubectl get nodes failed: {}",
-                stderr
-            ));
+            return Err(anyhow!("kubectl get nodes failed: {}", stderr));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -505,9 +495,7 @@ impl K3sInstaller {
         warn!("Rolling back k3s installation");
 
         // Stop k3s if running
-        let _ = Command::new("pkill")
-            .arg("k3s")
-            .output();
+        let _ = Command::new("pkill").arg("k3s").output();
 
         // Remove binary
         let install_path = self.config.install_dir.join("k3s");
@@ -556,7 +544,9 @@ mod tests {
 
         assert_eq!(config.version, K3S_VERSION);
         assert_eq!(config.install_dir, expected_install_dir);
-        assert!(config.server_flags.contains(&"--write-kubeconfig-mode=644".to_string()));
+        assert!(config
+            .server_flags
+            .contains(&"--write-kubeconfig-mode=644".to_string()));
     }
 
     // TODO: Issue #TBD - Fix installer creation to work on x86_64 or skip on non-ARM64
@@ -661,7 +651,10 @@ mod tests {
         let rootless = K3sMode::Rootless;
         let root = K3sMode::Root;
 
-        assert_ne!(rootless, root, "Rootless and Root should be different variants");
+        assert_ne!(
+            rootless, root,
+            "Rootless and Root should be different variants"
+        );
     }
 
     #[test]
@@ -669,7 +662,11 @@ mod tests {
         // Test that default K3sConfig uses Rootless mode
         let config = K3sConfig::default();
 
-        assert_eq!(config.mode, K3sMode::Rootless, "Default mode should be Rootless for development");
+        assert_eq!(
+            config.mode,
+            K3sMode::Rootless,
+            "Default mode should be Rootless for development"
+        );
     }
 
     #[test]
@@ -683,7 +680,9 @@ mod tests {
                 "Rootless mode should include --rootless flag"
             );
             assert!(
-                config.server_flags.contains(&"--snapshotter=fuse-overlayfs".to_string()),
+                config
+                    .server_flags
+                    .contains(&"--snapshotter=fuse-overlayfs".to_string()),
                 "Rootless mode should include --snapshotter=fuse-overlayfs flag"
             );
         }
@@ -695,16 +694,19 @@ mod tests {
         // This should work on most modern Linux systems
         #[cfg(target_os = "linux")]
         {
-            let result = cgroup_v2_available();
+            let _result = cgroup_v2_available();
             // Just ensure it returns a boolean without panicking
-            assert!(result == true || result == false);
+            // No assertion needed - we just want to verify it doesn't panic
         }
 
         #[cfg(not(target_os = "linux"))]
         {
             // On non-Linux, should return false
             let result = cgroup_v2_available();
-            assert_eq!(result, false, "cgroup v2 detection should return false on non-Linux");
+            assert_eq!(
+                result, false,
+                "cgroup v2 detection should return false on non-Linux"
+            );
         }
     }
 
@@ -717,7 +719,13 @@ mod tests {
         let rootless_str = format!("{:?}", rootless);
         let root_str = format!("{:?}", root);
 
-        assert!(rootless_str.contains("Rootless"), "Rootless mode should display as 'Rootless'");
-        assert!(root_str.contains("Root"), "Root mode should display as 'Root'");
+        assert!(
+            rootless_str.contains("Rootless"),
+            "Rootless mode should display as 'Rootless'"
+        );
+        assert!(
+            root_str.contains("Root"),
+            "Root mode should display as 'Root'"
+        );
     }
 }

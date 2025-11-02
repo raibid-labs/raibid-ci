@@ -49,6 +49,12 @@ pub struct PreFlightResult {
     pub warnings: Vec<String>,
 }
 
+impl Default for PreFlightResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PreFlightResult {
     pub fn new() -> Self {
         Self {
@@ -126,13 +132,13 @@ impl PreFlightValidator {
 
     /// Check available disk space
     fn check_disk_space(&self, result: &mut PreFlightResult) {
-        debug!("Checking disk space (minimum: {} GB)", self.requirements.min_disk_space_gb);
+        debug!(
+            "Checking disk space (minimum: {} GB)",
+            self.requirements.min_disk_space_gb
+        );
 
         // Try to check disk space using df
-        let output = Command::new("df")
-            .arg("-BG")
-            .arg(".")
-            .output();
+        let output = Command::new("df").arg("-BG").arg(".").output();
 
         match output {
             Ok(output) if output.status.success() => {
@@ -157,19 +163,22 @@ impl PreFlightValidator {
                 }
             }
             _ => {
-                result.add_warning("Could not check disk space. Ensure sufficient space is available.");
+                result.add_warning(
+                    "Could not check disk space. Ensure sufficient space is available.",
+                );
             }
         }
     }
 
     /// Check available memory
     fn check_memory(&self, result: &mut PreFlightResult) {
-        debug!("Checking memory (minimum: {} GB)", self.requirements.min_memory_gb);
+        debug!(
+            "Checking memory (minimum: {} GB)",
+            self.requirements.min_memory_gb
+        );
 
         // Try to check memory using free
-        let output = Command::new("free")
-            .arg("-g")
-            .output();
+        let output = Command::new("free").arg("-g").output();
 
         match output {
             Ok(output) if output.status.success() => {
@@ -191,14 +200,18 @@ impl PreFlightValidator {
                 }
             }
             _ => {
-                result.add_warning("Could not check memory. Ensure sufficient memory is available.");
+                result
+                    .add_warning("Could not check memory. Ensure sufficient memory is available.");
             }
         }
     }
 
     /// Check required commands are available
     fn check_required_commands(&self, result: &mut PreFlightResult) {
-        debug!("Checking required commands: {:?}", self.requirements.required_commands);
+        debug!(
+            "Checking required commands: {:?}",
+            self.requirements.required_commands
+        );
 
         for command in &self.requirements.required_commands {
             if !self.is_command_available(command) {
@@ -214,7 +227,10 @@ impl PreFlightValidator {
 
     /// Check optional commands
     fn check_optional_commands(&self, result: &mut PreFlightResult) {
-        debug!("Checking optional commands: {:?}", self.requirements.optional_commands);
+        debug!(
+            "Checking optional commands: {:?}",
+            self.requirements.optional_commands
+        );
 
         for command in &self.requirements.optional_commands {
             if !self.is_command_available(command) {
@@ -239,7 +255,10 @@ impl PreFlightValidator {
 
     /// Check required directories exist
     fn check_required_directories(&self, result: &mut PreFlightResult) {
-        debug!("Checking required directories: {:?}", self.requirements.required_directories);
+        debug!(
+            "Checking required directories: {:?}",
+            self.requirements.required_directories
+        );
 
         for dir in &self.requirements.required_directories {
             let path = Path::new(dir);
@@ -265,7 +284,10 @@ impl PreFlightValidator {
             return;
         }
 
-        debug!("Checking network connectivity to: {:?}", self.requirements.required_endpoints);
+        debug!(
+            "Checking network connectivity to: {:?}",
+            self.requirements.required_endpoints
+        );
 
         for endpoint in &self.requirements.required_endpoints {
             // Try a simple curl check
@@ -320,10 +342,7 @@ pub fn gitea_requirements() -> SystemRequirements {
     SystemRequirements {
         min_disk_space_gb: 15,
         min_memory_gb: 4,
-        required_commands: vec![
-            "kubectl".to_string(),
-            "helm".to_string(),
-        ],
+        required_commands: vec!["kubectl".to_string(), "helm".to_string()],
         optional_commands: vec![],
         required_directories: vec![],
         required_endpoints: vec![],
@@ -335,10 +354,7 @@ pub fn redis_requirements() -> SystemRequirements {
     SystemRequirements {
         min_disk_space_gb: 10,
         min_memory_gb: 2,
-        required_commands: vec![
-            "kubectl".to_string(),
-            "helm".to_string(),
-        ],
+        required_commands: vec!["kubectl".to_string(), "helm".to_string()],
         optional_commands: vec![],
         required_directories: vec![],
         required_endpoints: vec![],
@@ -350,10 +366,7 @@ pub fn keda_requirements() -> SystemRequirements {
     SystemRequirements {
         min_disk_space_gb: 5,
         min_memory_gb: 1,
-        required_commands: vec![
-            "kubectl".to_string(),
-            "helm".to_string(),
-        ],
+        required_commands: vec!["kubectl".to_string(), "helm".to_string()],
         optional_commands: vec![],
         required_directories: vec![],
         required_endpoints: vec![],
@@ -365,11 +378,7 @@ pub fn flux_requirements() -> SystemRequirements {
     SystemRequirements {
         min_disk_space_gb: 5,
         min_memory_gb: 1,
-        required_commands: vec![
-            "kubectl".to_string(),
-            "tar".to_string(),
-            "curl".to_string(),
-        ],
+        required_commands: vec!["kubectl".to_string(), "tar".to_string(), "curl".to_string()],
         optional_commands: vec!["sudo".to_string()],
         required_directories: vec![],
         required_endpoints: vec!["https://github.com".to_string()],
@@ -474,7 +483,9 @@ mod tests {
         validator.check_required_commands(&mut result);
 
         assert!(!result.errors.is_empty());
-        assert!(result.errors[0].message.contains("nonexistent_command_12345"));
+        assert!(result.errors[0]
+            .message
+            .contains("nonexistent_command_12345"));
     }
 
     #[test]

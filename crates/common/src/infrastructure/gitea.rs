@@ -3,7 +3,7 @@
 //! This module handles deploying Gitea via Helm chart with OCI registry support.
 //! It configures persistent storage, admin credentials, and webhooks for CI integration.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -94,7 +94,8 @@ impl GiteaConfig {
     /// Generate a random password for admin account
     fn generate_password() -> String {
         use rand::Rng;
-        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        const CHARSET: &[u8] =
+            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         let mut rng = rand::thread_rng();
 
         (0..16)
@@ -123,24 +124,22 @@ impl GiteaConfig {
                     self.ssh_node_port.unwrap_or(30022)
                 )
             }
-            ServiceType::LoadBalancer => {
-                r#"  type: LoadBalancer
+            ServiceType::LoadBalancer => r#"  type: LoadBalancer
   http:
     type: LoadBalancer
     port: 3000
   ssh:
     type: LoadBalancer
-    port: 22"#.to_string()
-            }
-            ServiceType::ClusterIP => {
-                r#"  type: ClusterIP
+    port: 22"#
+                .to_string(),
+            ServiceType::ClusterIP => r#"  type: ClusterIP
   http:
     type: ClusterIP
     port: 3000
   ssh:
     type: ClusterIP
-    port: 22"#.to_string()
-            }
+    port: 22"#
+                .to_string(),
         };
 
         let oci_config = if self.enable_oci_registry {
@@ -237,7 +236,11 @@ ingress:
             self.admin_user,
             self.admin_password,
             self.admin_email,
-            if self.enable_oci_registry { "true" } else { "false" },
+            if self.enable_oci_registry {
+                "true"
+            } else {
+                "false"
+            },
             oci_config,
             self.storage_size,
             self.storage_class,
@@ -307,13 +310,14 @@ impl GiteaInstaller {
         // Download Helm install script
         let script_path = std::env::temp_dir().join("get_helm.sh");
 
-        let script_content = reqwest::blocking::get("https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3")
-            .context("Failed to download Helm install script")?
-            .text()
-            .context("Failed to read Helm install script")?;
+        let script_content = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3",
+        )
+        .context("Failed to download Helm install script")?
+        .text()
+        .context("Failed to read Helm install script")?;
 
-        fs::write(&script_path, script_content)
-            .context("Failed to write Helm install script")?;
+        fs::write(&script_path, script_content).context("Failed to write Helm install script")?;
 
         // Make script executable
         #[cfg(unix)]
@@ -431,14 +435,12 @@ impl GiteaInstaller {
 
         // Create directory
         if let Some(parent) = self.values_file.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create values file directory")?;
+            fs::create_dir_all(parent).context("Failed to create values file directory")?;
         }
 
         // Generate and write values
         let values = self.config.generate_helm_values();
-        fs::write(&self.values_file, values)
-            .context("Failed to write Helm values file")?;
+        fs::write(&self.values_file, values).context("Failed to write Helm values file")?;
 
         debug!("Helm values written to: {:?}", self.values_file);
         Ok(())
@@ -471,8 +473,7 @@ impl GiteaInstaller {
 
         debug!("Running Helm command: {:?}", cmd);
 
-        let output = cmd.output()
-            .context("Failed to run Helm upgrade")?;
+        let output = cmd.output().context("Failed to run Helm upgrade")?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -497,7 +498,10 @@ impl GiteaInstaller {
             .arg("--for=condition=ready")
             .arg("pod")
             .arg("-l")
-            .arg(format!("app.kubernetes.io/name=gitea,app.kubernetes.io/instance={}", self.config.release_name))
+            .arg(format!(
+                "app.kubernetes.io/name=gitea,app.kubernetes.io/instance={}",
+                self.config.release_name
+            ))
             .arg("--namespace")
             .arg(&self.config.namespace)
             .arg("--timeout=600s")
@@ -538,10 +542,10 @@ impl GiteaInstaller {
         let info = String::from_utf8_lossy(&output.stdout);
         let parts: Vec<&str> = info.split(',').collect();
 
-        let service_type = parts.get(0).unwrap_or(&"Unknown").to_string();
-        let node_port = parts.get(1)
-            .and_then(|s| s.parse::<u16>().ok());
-        let load_balancer_ip = parts.get(2)
+        let service_type = parts.first().unwrap_or(&"Unknown").to_string();
+        let node_port = parts.get(1).and_then(|s| s.parse::<u16>().ok());
+        let load_balancer_ip = parts
+            .get(2)
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string());
 
@@ -587,7 +591,10 @@ impl GiteaInstaller {
             .arg("--namespace")
             .arg(&self.config.namespace)
             .arg("-l")
-            .arg(format!("app.kubernetes.io/instance={}", self.config.release_name))
+            .arg(format!(
+                "app.kubernetes.io/instance={}",
+                self.config.release_name
+            ))
             .arg("-o")
             .arg("jsonpath={.items[*].status.phase}")
             .env("KUBECONFIG", &self.config.kubeconfig_path)
@@ -613,8 +620,7 @@ impl GiteaInstaller {
     pub fn cleanup(&self) -> Result<()> {
         if let Some(parent) = self.values_file.parent() {
             if parent.exists() {
-                fs::remove_dir_all(parent)
-                    .context("Failed to cleanup values directory")?;
+                fs::remove_dir_all(parent).context("Failed to cleanup values directory")?;
                 debug!("Cleaned up values directory");
             }
         }
@@ -707,7 +713,10 @@ impl GiteaInstaller {
 
     /// Get admin credentials
     pub fn get_credentials(&self) -> (String, String) {
-        (self.config.admin_user.clone(), self.config.admin_password.clone())
+        (
+            self.config.admin_user.clone(),
+            self.config.admin_password.clone(),
+        )
     }
 }
 
@@ -730,7 +739,11 @@ pub struct ServiceInfo {
 impl ServiceInfo {
     /// Get access URL for Gitea
     pub fn access_url(&self) -> String {
-        match (self.service_type.as_str(), &self.load_balancer_ip, self.node_port) {
+        match (
+            self.service_type.as_str(),
+            &self.load_balancer_ip,
+            self.node_port,
+        ) {
             ("LoadBalancer", Some(ip), _) => format!("http://{}:3000", ip),
             ("NodePort", _, Some(port)) => format!("http://localhost:{}", port),
             _ => "http://localhost:3000 (ClusterIP - use port-forward)".to_string(),
@@ -763,7 +776,9 @@ mod tests {
     fn test_generate_password() {
         let password = GiteaConfig::generate_password();
         assert_eq!(password.len(), 16);
-        assert!(password.chars().all(|c| c.is_alphanumeric() || "!@#$%^&*".contains(c)));
+        assert!(password
+            .chars()
+            .all(|c| c.is_alphanumeric() || "!@#$%^&*".contains(c)));
     }
 
     #[test]

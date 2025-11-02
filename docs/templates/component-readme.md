@@ -111,10 +111,6 @@ let component = Component::builder()
     .build()?;
 ```
 
-## API Reference
-
-See [API Documentation](../../api/component-api.md) for complete reference.
-
 ## Performance
 
 ### Metrics
@@ -132,14 +128,10 @@ See [API Documentation](../../api/component-api.md) for complete reference.
 - `ErrorType1` - Description and recovery
 - `ErrorType2` - Description and recovery
 
-### Troubleshooting
-See [Troubleshooting Guide](../../guides/troubleshooting.md#component-name)
-
 ## Related Documentation
 
-- [Architecture Overview](../../architecture/system-overview.md)
-- [Development Guide](../../guides/component-development.md)
-- [Workstream](../../workstreams/XX-workstream-name/README.md)
+- [Architecture Documentation](../../README.md)
+- [Technology Research](../technology-research.md)
 
 ## Coming Soon / Future Work
 

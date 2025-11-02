@@ -5,13 +5,12 @@
 
 use anyhow::Result;
 use colored::Colorize;
-use comfy_table::{Table, Row, Cell, Color, Attribute, ContentArrangement, presets::UTF8_FULL};
+use comfy_table::{presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table};
 
 use super::setup::Component;
 use raibid_common::infrastructure::{
-    ComponentStatusChecker, K3sStatusChecker, GiteaStatusChecker,
-    RedisStatusChecker, KedaStatusChecker, FluxStatusChecker,
-    ComponentStatus, ComponentHealth,
+    ComponentHealth, ComponentStatus, ComponentStatusChecker, FluxStatusChecker,
+    GiteaStatusChecker, K3sStatusChecker, KedaStatusChecker, RedisStatusChecker,
 };
 
 /// Execute the status command for a component
@@ -149,11 +148,13 @@ fn print_status_table(statuses: &[ComponentStatus]) {
         row.add_cell(
             Cell::new(&status.name)
                 .add_attribute(Attribute::Bold)
-                .fg(Color::Cyan)
+                .fg(Color::Cyan),
         );
 
         // Version
-        let version = status.version.as_ref()
+        let version = status
+            .version
+            .as_ref()
             .map(|v| v.version.clone())
             .unwrap_or_else(|| "N/A".to_string());
         row.add_cell(Cell::new(&version));
@@ -263,11 +264,11 @@ fn print_detailed_status(status: &ComponentStatus) -> Result<()> {
             row.add_cell(ready_cell);
 
             let restart_cell = if pod.restarts == 0 {
-                Cell::new(&pod.restarts.to_string())
+                Cell::new(pod.restarts.to_string())
             } else if pod.restarts < 5 {
-                Cell::new(&pod.restarts.to_string()).fg(Color::Yellow)
+                Cell::new(pod.restarts.to_string()).fg(Color::Yellow)
             } else {
-                Cell::new(&pod.restarts.to_string()).fg(Color::Red)
+                Cell::new(pod.restarts.to_string()).fg(Color::Red)
             };
             row.add_cell(restart_cell);
 

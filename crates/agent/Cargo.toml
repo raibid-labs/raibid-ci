@@ -30,6 +30,10 @@ serde_json = { workspace = true }
 
 # Utilities
 chrono = { workspace = true }
+uuid = { workspace = true }
+
+# Redis for job queue and log streaming
+redis = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

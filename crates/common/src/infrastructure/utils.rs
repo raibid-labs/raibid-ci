@@ -3,7 +3,7 @@
 //! This module provides helper functions for permission checking, PATH detection,
 //! and generating helpful error messages.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tracing::{debug, warn};
@@ -14,12 +14,13 @@ pub fn check_directory_writable(dir: &Path) -> Result<()> {
 
     // If directory doesn't exist, try to create it
     if !dir.exists() {
-        fs::create_dir_all(dir)
-            .with_context(|| format!(
+        fs::create_dir_all(dir).with_context(|| {
+            format!(
                 "Failed to create install directory: {}\n\n{}",
                 dir.display(),
                 permission_denied_help(dir)
-            ))?;
+            )
+        })?;
     }
 
     // Try to create a test file
@@ -31,14 +32,12 @@ pub fn check_directory_writable(dir: &Path) -> Result<()> {
             debug!("Directory is writable: {:?}", dir);
             Ok(())
         }
-        Err(e) => {
-            Err(anyhow!(
-                "Cannot write to installation directory: {}\n\n{}",
-                dir.display(),
-                permission_denied_help(dir)
-            ))
-            .context(format!("Permission check failed: {}", e))
-        }
+        Err(e) => Err(anyhow!(
+            "Cannot write to installation directory: {}\n\n{}",
+            dir.display(),
+            permission_denied_help(dir)
+        ))
+        .context(format!("Permission check failed: {}", e)),
     }
 }
 
@@ -145,7 +144,10 @@ mod tests {
         let _ = fs::remove_dir_all(&test_dir);
 
         let result = check_directory_writable(&test_dir);
-        assert!(result.is_ok(), "Should be able to create and write to new directory");
+        assert!(
+            result.is_ok(),
+            "Should be able to create and write to new directory"
+        );
 
         // Clean up
         let _ = fs::remove_dir_all(&test_dir);
@@ -178,7 +180,10 @@ mod tests {
     #[test]
     fn test_is_directory_in_path() {
         let path_env = std::env::var("PATH").expect("PATH should be set");
-        let first_dir = path_env.split(':').next().expect("PATH should have entries");
+        let first_dir = path_env
+            .split(':')
+            .next()
+            .expect("PATH should have entries");
 
         let result = is_directory_in_path(&PathBuf::from(first_dir));
         assert!(result, "First PATH directory should be detected");

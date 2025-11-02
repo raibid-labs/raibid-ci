@@ -419,10 +419,7 @@ impl MockJobLogs {
                 entries.push(MockLogEntry {
                     timestamp: current_time + Duration::seconds(1),
                     level: LogLevel::Info,
-                    message: format!(
-                        "Total duration: {}s",
-                        job.duration.unwrap_or(0)
-                    ),
+                    message: format!("Total duration: {}s", job.duration.unwrap_or(0)),
                 });
             }
             JobStatus::Failed => {
@@ -475,13 +472,25 @@ pub fn generate_system_logs() -> Vec<MockLogEntry> {
     let log_messages = [
         (LogLevel::Info, "Redis connection pool initialized"),
         (LogLevel::Info, "Flux sync completed: 3 deployments updated"),
-        (LogLevel::Info, "KEDA autoscaler triggered: scaling to 5 agents"),
-        (LogLevel::Error, "Job job-4518 failed: build timeout exceeded"),
-        (LogLevel::Info, "Job job-4521 dispatched to agent dgx-agent-002"),
+        (
+            LogLevel::Info,
+            "KEDA autoscaler triggered: scaling to 5 agents",
+        ),
+        (
+            LogLevel::Error,
+            "Job job-4518 failed: build timeout exceeded",
+        ),
+        (
+            LogLevel::Info,
+            "Job job-4521 dispatched to agent dgx-agent-002",
+        ),
         (LogLevel::Warn, "High queue depth detected: 15 jobs pending"),
         (LogLevel::Info, "Job job-4523 completed successfully"),
         (LogLevel::Info, "Agent dgx-agent-001 started successfully"),
-        (LogLevel::Info, "Agent dgx-agent-003 idle for 300s, scheduling shutdown"),
+        (
+            LogLevel::Info,
+            "Agent dgx-agent-003 idle for 300s, scheduling shutdown",
+        ),
         (LogLevel::Warn, "Memory usage high on dgx-agent-002: 85%"),
         (LogLevel::Info, "Cache hit rate: 78% (last hour)"),
         (LogLevel::Info, "Repository sync: raibid-cli updated"),

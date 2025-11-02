@@ -153,7 +153,12 @@ fn render_footer(frame: &mut Frame, area: Rect, ui_state: &UiState) {
                 Span::styled("Search: ", Style::default().fg(Color::Cyan)),
                 Span::raw(ui_state.search_query),
                 Span::raw(" | "),
-                Span::styled("Enter/Esc", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Enter/Esc",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" Exit"),
             ]);
         }
@@ -161,42 +166,107 @@ fn render_footer(frame: &mut Frame, area: Rect, ui_state: &UiState) {
             footer_spans.extend(vec![
                 Span::styled("Filter Mode", Style::default().fg(Color::Cyan)),
                 Span::raw(" | "),
-                Span::styled("Up/Down", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Up/Down",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" Select | "),
-                Span::styled("Enter", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Enter",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" Apply | "),
-                Span::styled("Esc", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Esc",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" Cancel"),
             ]);
         }
         InputMode::Normal => {
             if ui_state.show_confirmation {
                 footer_spans.extend(vec![
-                    Span::styled("Y", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "Y",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Confirm | "),
-                    Span::styled("N/Esc", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "N/Esc",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Cancel"),
                 ]);
             } else if ui_state.show_help || ui_state.show_detail_popup {
                 footer_spans.extend(vec![
-                    Span::styled("Esc", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "Esc",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Close"),
                 ]);
             } else {
                 footer_spans.extend(vec![
-                    Span::styled("Tab/←/→", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "Tab/←/→",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Switch | "),
-                    Span::styled("↑/↓", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "↑/↓",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Navigate | "),
-                    Span::styled("Enter", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "Enter",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Details | "),
-                    Span::styled("f", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "f",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Filter | "),
-                    Span::styled("/", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "/",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Search | "),
-                    Span::styled("?", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "?",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Help | "),
-                    Span::styled("q", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "q",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" Quit"),
                 ]);
             }
@@ -670,7 +740,9 @@ fn render_logs_tab(frame: &mut Frame, area: Rect) {
                 Span::raw(" "),
                 Span::styled(
                     format!("{:5}", entry.level.as_str()),
-                    Style::default().fg(level_color).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(level_color)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw("  "),
                 Span::raw(&entry.message),
@@ -711,8 +783,7 @@ fn render_help_screen(frame: &mut Frame, area: Rect) {
     let popup_area = centered_rect(80, 80, area);
 
     // Clear the background
-    let clear_block = Block::default()
-        .style(Style::default().bg(Color::Black));
+    let clear_block = Block::default().style(Style::default().bg(Color::Black));
     frame.render_widget(clear_block, area);
 
     let block = Block::default()
@@ -829,8 +900,7 @@ fn render_job_detail_popup(frame: &mut Frame, area: Rect, job: &MockJob) {
     let popup_area = centered_rect(90, 85, area);
 
     // Clear the background
-    let clear_block = Block::default()
-        .style(Style::default().bg(Color::Black));
+    let clear_block = Block::default().style(Style::default().bg(Color::Black));
     frame.render_widget(clear_block, area);
 
     let block = Block::default()
@@ -849,7 +919,7 @@ fn render_job_detail_popup(frame: &mut Frame, area: Rect, job: &MockJob) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(10), // Job info
-            Constraint::Min(0),      // Logs
+            Constraint::Min(0),     // Logs
         ])
         .split(block.inner(popup_area));
 
@@ -979,8 +1049,7 @@ fn render_confirmation_dialog(frame: &mut Frame, area: Rect, message: &str) {
     let popup_area = centered_rect(50, 20, area);
 
     // Clear the background
-    let clear_block = Block::default()
-        .style(Style::default().bg(Color::Black));
+    let clear_block = Block::default().style(Style::default().bg(Color::Black));
     frame.render_widget(clear_block, area);
 
     let block = Block::default()
@@ -1002,9 +1071,17 @@ fn render_confirmation_dialog(frame: &mut Frame, area: Rect, message: &str) {
         )]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("Y", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Y",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" Yes  "),
-            Span::styled("N", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "N",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" No"),
         ]),
     ];

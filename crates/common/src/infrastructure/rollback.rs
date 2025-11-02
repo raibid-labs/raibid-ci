@@ -46,7 +46,10 @@ impl RollbackManager {
 
     /// Commit successful installation (disables rollback)
     pub fn commit(mut self) {
-        info!("Committing successful installation for {}, disabling rollback", self.component);
+        info!(
+            "Committing successful installation for {}, disabling rollback",
+            self.component
+        );
         self.auto_rollback = false;
         self.actions.clear();
     }
@@ -63,7 +66,11 @@ impl RollbackManager {
             return Ok(());
         }
 
-        warn!("Executing rollback for {} ({} actions)", self.component, self.actions.len());
+        warn!(
+            "Executing rollback for {} ({} actions)",
+            self.component,
+            self.actions.len()
+        );
 
         let mut failed_actions = Vec::new();
         let mut successful_cleanups = Vec::new();
@@ -209,14 +216,13 @@ impl RollbackContext {
                         cmd.env("KUBECONFIG", kc);
                     }
 
-                    let output = cmd.output()
-                        .map_err(|e| InfraError::CommandFailed {
-                            command: format!("helm uninstall {}", name),
-                            exit_code: None,
-                            stdout: String::new(),
-                            stderr: e.to_string(),
-                            suggestion: "Check if Helm is installed and accessible".to_string(),
-                        })?;
+                    let output = cmd.output().map_err(|e| InfraError::CommandFailed {
+                        command: format!("helm uninstall {}", name),
+                        exit_code: None,
+                        stdout: String::new(),
+                        stderr: e.to_string(),
+                        suggestion: "Check if Helm is installed and accessible".to_string(),
+                    })?;
 
                     if !output.status.success() {
                         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -257,14 +263,14 @@ impl RollbackContext {
                         cmd.env("KUBECONFIG", kc);
                     }
 
-                    let output = cmd.output()
-                        .map_err(|e| InfraError::CommandFailed {
-                            command: format!("kubectl delete {} {}", kind, name),
-                            exit_code: None,
-                            stdout: String::new(),
-                            stderr: e.to_string(),
-                            suggestion: "Check if kubectl is installed and cluster is accessible".to_string(),
-                        })?;
+                    let output = cmd.output().map_err(|e| InfraError::CommandFailed {
+                        command: format!("kubectl delete {} {}", kind, name),
+                        exit_code: None,
+                        stdout: String::new(),
+                        stderr: e.to_string(),
+                        suggestion: "Check if kubectl is installed and cluster is accessible"
+                            .to_string(),
+                    })?;
 
                     if !output.status.success() {
                         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -323,16 +329,10 @@ impl RollbackContext {
                     use std::process::Command;
 
                     // Stop service
-                    let _ = Command::new("systemctl")
-                        .arg("stop")
-                        .arg(&name)
-                        .output();
+                    let _ = Command::new("systemctl").arg("stop").arg(&name).output();
 
                     // Disable service
-                    let _ = Command::new("systemctl")
-                        .arg("disable")
-                        .arg(&name)
-                        .output();
+                    let _ = Command::new("systemctl").arg("disable").arg(&name).output();
 
                     Ok(())
                 }),
@@ -442,7 +442,10 @@ mod tests {
         assert_eq!(context.k8s_resources.len(), 1);
         assert_eq!(context.k8s_resources[0].kind, "Pod");
         assert_eq!(context.k8s_resources[0].name, "test-pod");
-        assert_eq!(context.k8s_resources[0].namespace, Some("default".to_string()));
+        assert_eq!(
+            context.k8s_resources[0].namespace,
+            Some("default".to_string())
+        );
     }
 
     #[test]
@@ -457,7 +460,7 @@ mod tests {
     #[test]
     fn test_rollback_execution_order() {
         let mut manager = RollbackManager::new("test");
-        let mut order = Vec::new();
+        let order = Vec::new();
 
         manager.add_action("first", {
             let mut order = order.clone();

@@ -439,7 +439,7 @@ The orchestrator will:
 ## Related Documentation
 
 - **Main Orchestrator Guide**: [ORCHESTRATOR.md](../ORCHESTRATOR.md)
-- **Event-Driven Architecture**: [docs/EVENT_DRIVEN_ORCHESTRATION.md](EVENT_DRIVEN_ORCHESTRATION.md)
+- **Event-Driven Architecture**: [docs/architecture/event-driven-orchestration.md](architecture/event-driven-orchestration.md)
 - **Agent Patterns**: [docs/ORCHESTRATOR_AGENT.md](ORCHESTRATOR_AGENT.md)
 
 ---

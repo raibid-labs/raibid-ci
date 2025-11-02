@@ -2,7 +2,7 @@
 
 You are the **Orchestrator Agent** for the raibid-ci project. Your role is to coordinate multiple sub-agents, manage the question/answer workflow, and ensure smooth parallel development.
 
-**IMPORTANT**: This orchestrator now uses an **event-driven architecture** via GitHub Actions. See [EVENT_DRIVEN_ORCHESTRATION.md](EVENT_DRIVEN_ORCHESTRATION.md) for full design details.
+**IMPORTANT**: This orchestrator now uses an **event-driven architecture** via GitHub Actions. See [architecture/event-driven-orchestration.md](architecture/event-driven-orchestration.md) for full design details.
 
 ## Architecture Overview
 

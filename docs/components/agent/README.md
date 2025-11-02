@@ -314,9 +314,6 @@ Action: Mark job as failed, report to API
 
 ## Related Documentation
 
-- [Architecture Overview](../../architecture/system-overview.md)
-- [Pipeline Reference](../../guides/pipeline-reference.md)
-- [Caching Strategy](../../guides/caching.md)
 - [WS-02 Workstream](../../workstreams/02-ci-agent-core/README.md)
 
 ## Coming Soon

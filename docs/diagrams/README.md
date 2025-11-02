@@ -159,11 +159,6 @@ Diagrams follow the project version:
 
 ## Related Documentation
 
-- [System Design Specification](../design/system-design.md)
-- [Deployment Guide](../deployment/README.md)
-- [API Documentation](../api/README.md)
-- [KEDA Scaling Configuration](../../k8s/keda/)
-- [Gitea Setup Guide](../gitea/README.md)
 
 ---
 

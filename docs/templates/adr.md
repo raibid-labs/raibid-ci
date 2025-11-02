@@ -109,10 +109,9 @@ How will we know this was successful?
 
 ## References
 
-- [Related ADR](./adr-YYYY.md)
-- [External documentation](https://example.com)
-- [Design document](../architecture/design-doc.md)
-- [Discussion thread](https://github.com/org/repo/discussions/123)
+- [Architecture Documentation](../architecture/)
+- [Technology Research](../technology-research.md)
+- External documentation: https://example.com
 
 ## Notes
 

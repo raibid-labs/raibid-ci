@@ -7,9 +7,11 @@
 //! - path: Show configuration file location
 
 use crate::cli::ConfigCommand;
-use raibid_common::config::{discover_config_files, load_config, load_config_file, validate_config};
 use anyhow::{Context, Result};
 use colored::Colorize;
+use raibid_common::config::{
+    discover_config_files, load_config, load_config_file, validate_config,
+};
 use std::fs;
 use std::path::PathBuf;
 

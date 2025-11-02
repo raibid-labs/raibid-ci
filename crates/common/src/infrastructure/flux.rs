@@ -3,7 +3,7 @@
 //! This module handles installing Flux CLI and bootstrapping Flux controllers
 //! in the k3s cluster with Gitea as the Git source for GitOps workflows.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -34,11 +34,7 @@ impl Platform {
             ("linux", "x86_64") => Ok(Platform::LinuxAmd64),
             ("macos", "aarch64") => Ok(Platform::DarwinArm64),
             ("macos", "x86_64") => Ok(Platform::DarwinAmd64),
-            _ => Err(anyhow!(
-                "Unsupported platform: {} {}",
-                os,
-                arch
-            )),
+            _ => Err(anyhow!("Unsupported platform: {} {}", os, arch)),
         }
     }
 
@@ -114,22 +110,22 @@ impl FluxConfig {
     /// Get the full repository URL
     #[allow(dead_code)]
     pub fn repository_url(&self) -> String {
-        format!("{}/{}/{}.git", self.gitea_url, self.username, self.repository)
+        format!(
+            "{}/{}/{}.git",
+            self.gitea_url, self.username, self.repository
+        )
     }
 
     /// Get the repository URL with credentials
     pub fn repository_url_with_auth(&self) -> String {
-        let url = self.gitea_url
+        let url = self
+            .gitea_url
             .trim_start_matches("http://")
             .trim_start_matches("https://");
 
         format!(
             "http://{}:{}@{}/{}/{}.git",
-            self.username,
-            self.password,
-            url,
-            self.username,
-            self.repository
+            self.username, self.password, url, self.username, self.repository
         )
     }
 
@@ -178,9 +174,7 @@ impl FluxInstaller {
 
     /// Check if Flux CLI is already installed
     pub fn check_flux_cli(&self) -> Result<bool> {
-        let output = Command::new("flux")
-            .arg("--version")
-            .output();
+        let output = Command::new("flux").arg("--version").output();
 
         match output {
             Ok(output) => {
@@ -199,15 +193,12 @@ impl FluxInstaller {
     /// Download Flux CLI binary archive
     pub async fn download_flux(&self) -> Result<PathBuf> {
         // Create download directory
-        fs::create_dir_all(&self.download_dir)
-            .context("Failed to create download directory")?;
+        fs::create_dir_all(&self.download_dir).context("Failed to create download directory")?;
 
         let archive_name = self.platform.archive_name();
         let download_url = format!(
             "{}/{}/{}",
-            FLUX_GITHUB_RELEASE_URL,
-            self.config.version,
-            archive_name
+            FLUX_GITHUB_RELEASE_URL, self.config.version, archive_name
         );
 
         let archive_path = self.download_dir.join(archive_name);
@@ -226,13 +217,13 @@ impl FluxInstaller {
             ));
         }
 
-        let bytes = response.bytes().await
+        let bytes = response
+            .bytes()
+            .await
             .context("Failed to read response bytes")?;
 
-        let mut file = fs::File::create(&archive_path)
-            .context("Failed to create archive file")?;
-        file.write_all(&bytes)
-            .context("Failed to write archive")?;
+        let mut file = fs::File::create(&archive_path).context("Failed to create archive file")?;
+        file.write_all(&bytes).context("Failed to write archive")?;
 
         info!("Downloaded Flux archive to: {}", archive_path.display());
 
@@ -244,9 +235,7 @@ impl FluxInstaller {
         let checksum_name = self.platform.checksum_name();
         let download_url = format!(
             "{}/{}/{}",
-            FLUX_GITHUB_RELEASE_URL,
-            self.config.version,
-            checksum_name
+            FLUX_GITHUB_RELEASE_URL, self.config.version, checksum_name
         );
 
         let checksum_path = self.download_dir.join(checksum_name);
@@ -264,19 +253,20 @@ impl FluxInstaller {
             ));
         }
 
-        let bytes = response.bytes().await
+        let bytes = response
+            .bytes()
+            .await
             .context("Failed to read checksum bytes")?;
 
-        fs::write(&checksum_path, &bytes)
-            .context("Failed to write checksum file")?;
+        fs::write(&checksum_path, &bytes).context("Failed to write checksum file")?;
 
         Ok(checksum_path)
     }
 
     /// Verify archive checksum
     pub fn verify_checksum(&self, archive_path: &Path, checksums_path: &Path) -> Result<()> {
-        let checksums = fs::read_to_string(checksums_path)
-            .context("Failed to read checksums file")?;
+        let checksums =
+            fs::read_to_string(checksums_path).context("Failed to read checksums file")?;
 
         let archive_name = archive_path
             .file_name()
@@ -291,8 +281,8 @@ impl FluxInstaller {
             .ok_or_else(|| anyhow!("Checksum not found for {}", archive_name))?;
 
         // Calculate actual checksum
-        let archive_bytes = fs::read(archive_path)
-            .context("Failed to read archive for checksum")?;
+        let archive_bytes =
+            fs::read(archive_path).context("Failed to read archive for checksum")?;
         let actual_checksum = sha256::digest(&archive_bytes);
 
         if actual_checksum != expected_checksum {
@@ -388,8 +378,7 @@ impl FluxInstaller {
 
         debug!("Running: {:?}", cmd);
 
-        let output = cmd.output()
-            .context("Failed to run flux bootstrap")?;
+        let output = cmd.output().context("Failed to run flux bootstrap")?;
 
         if !output.status.success() {
             return Err(anyhow!(
@@ -506,11 +495,13 @@ spec:
         );
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(manifest.as_bytes())
+            stdin
+                .write_all(manifest.as_bytes())
                 .context("Failed to write ImageRepository manifest")?;
         }
 
-        let output = child.wait_with_output()
+        let output = child
+            .wait_with_output()
             .context("Failed to wait for kubectl")?;
 
         if !output.status.success() {
@@ -556,16 +547,17 @@ spec:
   type: gitea
   address: {}
 "#,
-            self.config.namespace,
-            self.config.gitea_url
+            self.config.namespace, self.config.gitea_url
         );
 
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(manifest.as_bytes())
+            stdin
+                .write_all(manifest.as_bytes())
                 .context("Failed to write Provider manifest")?;
         }
 
-        let output = child.wait_with_output()
+        let output = child
+            .wait_with_output()
             .context("Failed to wait for kubectl")?;
 
         if !output.status.success() {
@@ -657,7 +649,10 @@ spec:
         if self.download_dir.exists() {
             fs::remove_dir_all(&self.download_dir)
                 .context("Failed to remove download directory")?;
-            debug!("Cleaned up download directory: {}", self.download_dir.display());
+            debug!(
+                "Cleaned up download directory: {}",
+                self.download_dir.display()
+            );
         }
         Ok(())
     }

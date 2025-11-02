@@ -5,9 +5,11 @@
 
 use anyhow::Result;
 use colored::Colorize;
+use raibid_common::infrastructure::{
+    FluxConfig, FluxInstaller, GiteaInstaller, K3sInstaller, KedaInstaller, RedisInstaller,
+};
 use std::thread;
 use std::time::Duration;
-use raibid_common::infrastructure::{K3sInstaller, GiteaInstaller, RedisInstaller, KedaInstaller, FluxInstaller, FluxConfig};
 
 /// Infrastructure component that can be set up
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -343,7 +345,10 @@ fn setup_gitea_real() -> Result<()> {
         println!("{}", "done".green());
 
         // Deploy Helm chart
-        print!("  {} Deploying Gitea Helm chart (this may take several minutes)... ", "→".blue());
+        print!(
+            "  {} Deploying Gitea Helm chart (this may take several minutes)... ",
+            "→".blue()
+        );
         installer.deploy_helm_chart()?;
         println!("{}", "done".green());
 
@@ -365,11 +370,23 @@ fn setup_gitea_real() -> Result<()> {
         // Print access information
         println!();
         println!("{}", "Gitea Access Information:".bold().cyan());
-        println!("  {} URL: {}", "→".blue(), service_info.access_url().bold().green());
+        println!(
+            "  {} URL: {}",
+            "→".blue(),
+            service_info.access_url().bold().green()
+        );
 
         let (admin_user, admin_password) = installer.get_credentials();
-        println!("  {} Admin username: {}", "→".blue(), admin_user.bold().yellow());
-        println!("  {} Admin password: {}", "→".blue(), admin_password.bold().yellow());
+        println!(
+            "  {} Admin username: {}",
+            "→".blue(),
+            admin_user.bold().yellow()
+        );
+        println!(
+            "  {} Admin password: {}",
+            "→".blue(),
+            admin_password.bold().yellow()
+        );
 
         // Save credentials for Flux to use later
         let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/root"));
@@ -392,7 +409,12 @@ fn setup_gitea_real() -> Result<()> {
         }
 
         println!();
-        println!("{}", "⚠ Credentials saved securely for Flux integration".yellow().bold());
+        println!(
+            "{}",
+            "⚠ Credentials saved securely for Flux integration"
+                .yellow()
+                .bold()
+        );
         println!("  {} {}", "→".blue(), creds_path.display());
 
         Ok(())
@@ -476,9 +498,17 @@ fn setup_redis_real() -> Result<()> {
         println!();
         println!("{}", "Redis connection details:".bold().green());
         println!("  {} Host: {}", "→".blue(), conn_info.host.bold());
-        println!("  {} Port: {}", "→".blue(), conn_info.port.to_string().bold());
+        println!(
+            "  {} Port: {}",
+            "→".blue(),
+            conn_info.port.to_string().bold()
+        );
         println!("  {} Namespace: {}", "→".blue(), conn_info.namespace.bold());
-        println!("  {} Credentials saved to: {}", "→".blue(), creds_path.display().to_string().bold());
+        println!(
+            "  {} Credentials saved to: {}",
+            "→".blue(),
+            creds_path.display().to_string().bold()
+        );
 
         Ok(())
     })();
@@ -543,7 +573,10 @@ fn setup_keda_real() -> Result<()> {
         println!("{}", "done".green());
 
         // Create ScaledObject for Redis Streams
-        print!("  {} Creating ScaledObject for Redis Streams... ", "→".blue());
+        print!(
+            "  {} Creating ScaledObject for Redis Streams... ",
+            "→".blue()
+        );
         installer.create_scaled_object()?;
         println!("{}", "done".green());
 

@@ -9,7 +9,7 @@ use std::time::Duration;
 use tracing::{info, warn};
 
 use crate::infrastructure::error::{InfraError, InfraResult};
-use crate::infrastructure::retry::{RetryConfig, poll_until};
+use crate::infrastructure::retry::{poll_until, RetryConfig};
 
 /// Health check status
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,7 +96,8 @@ impl HealthCheckResult {
         if self.is_healthy() {
             Ok(())
         } else {
-            let failed_checks: Vec<String> = self.checks
+            let failed_checks: Vec<String> = self
+                .checks
                 .iter()
                 .filter(|c| !c.passed)
                 .map(|c| format!("{}: {}", c.name, c.message))
@@ -137,18 +138,27 @@ impl K3sHealthChecker {
 
         // Check if kubectl works
         let kubectl_check = self.check_kubectl();
-        result.add_check("kubectl", kubectl_check.is_ok(),
-            kubectl_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "kubectl",
+            kubectl_check.is_ok(),
+            kubectl_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         // Check if nodes are ready
         let nodes_check = self.check_nodes_ready();
-        result.add_check("nodes_ready", nodes_check.is_ok(),
-            nodes_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "nodes_ready",
+            nodes_check.is_ok(),
+            nodes_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         // Check if system pods are running
         let pods_check = self.check_system_pods();
-        result.add_check("system_pods", pods_check.is_ok(),
-            pods_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "system_pods",
+            pods_check.is_ok(),
+            pods_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         result.evaluate_status();
         Ok(result)
@@ -222,24 +232,22 @@ impl K3sHealthChecker {
     }
 
     pub fn wait_until_healthy(&self) -> InfraResult<()> {
-        info!("Waiting for k3s to become healthy (timeout: {:?})", self.timeout);
+        info!(
+            "Waiting for k3s to become healthy (timeout: {:?})",
+            self.timeout
+        );
 
         let config = RetryConfig::slow();
 
-        poll_until(
-            &config,
-            self.timeout,
-            "k3s health check",
-            || {
-                match self.check() {
-                    Ok(result) => Ok(result.is_healthy()),
-                    Err(e) => {
-                        warn!("Health check error: {}", e);
-                        Ok(false)
-                    }
+        poll_until(&config, self.timeout, "k3s health check", || {
+            match self.check() {
+                Ok(result) => Ok(result.is_healthy()),
+                Err(e) => {
+                    warn!("Health check error: {}", e);
+                    Ok(false)
                 }
-            },
-        )
+            }
+        })
     }
 }
 
@@ -271,23 +279,35 @@ impl HelmHealthChecker {
     }
 
     pub fn check(&self) -> InfraResult<HealthCheckResult> {
-        info!("Checking Helm release: {}/{}", self.namespace, self.release_name);
+        info!(
+            "Checking Helm release: {}/{}",
+            self.namespace, self.release_name
+        );
         let mut result = HealthCheckResult::new(format!("helm/{}", self.release_name));
 
         // Check if release exists
         let release_check = self.check_release_exists();
-        result.add_check("release_exists", release_check.is_ok(),
-            release_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "release_exists",
+            release_check.is_ok(),
+            release_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         // Check if release is deployed
         let status_check = self.check_release_status();
-        result.add_check("release_deployed", status_check.is_ok(),
-            status_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "release_deployed",
+            status_check.is_ok(),
+            status_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         // Check if pods are ready
         let pods_check = self.check_pods_ready();
-        result.add_check("pods_ready", pods_check.is_ok(),
-            pods_check.as_ref().map(|s| s.clone()).unwrap_or_else(|e| e.to_string()));
+        result.add_check(
+            "pods_ready",
+            pods_check.is_ok(),
+            pods_check.clone().unwrap_or_else(|e| e.to_string()),
+        );
 
         result.evaluate_status();
         Ok(result)
@@ -361,7 +381,10 @@ impl HelmHealthChecker {
     }
 
     pub fn wait_until_healthy(&self) -> InfraResult<()> {
-        info!("Waiting for Helm release to become healthy (timeout: {:?})", self.timeout);
+        info!(
+            "Waiting for Helm release to become healthy (timeout: {:?})",
+            self.timeout
+        );
 
         let config = RetryConfig::slow();
 
@@ -369,13 +392,11 @@ impl HelmHealthChecker {
             &config,
             self.timeout,
             &format!("helm release {} health check", self.release_name),
-            || {
-                match self.check() {
-                    Ok(result) => Ok(result.is_healthy()),
-                    Err(e) => {
-                        warn!("Health check error: {}", e);
-                        Ok(false)
-                    }
+            || match self.check() {
+                Ok(result) => Ok(result.is_healthy()),
+                Err(e) => {
+                    warn!("Health check error: {}", e);
+                    Ok(false)
                 }
             },
         )
@@ -477,8 +498,8 @@ mod tests {
 
     #[test]
     fn test_k3s_health_checker_with_timeout() {
-        let checker = K3sHealthChecker::new("/tmp/kubeconfig")
-            .with_timeout(Duration::from_secs(600));
+        let checker =
+            K3sHealthChecker::new("/tmp/kubeconfig").with_timeout(Duration::from_secs(600));
         assert_eq!(checker.timeout, Duration::from_secs(600));
     }
 

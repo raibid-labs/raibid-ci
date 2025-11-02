@@ -1,3 +1,4 @@
+mod api;
 mod cli;
 mod commands;
 
@@ -49,6 +50,10 @@ fn main() -> Result<()> {
                 None => None,
             };
             commands::status::execute(comp)
+        }
+        Some(cli::Commands::Jobs(cmd)) => {
+            // Handle jobs subcommands
+            commands::jobs::handle(&cmd)
         }
     }
 }

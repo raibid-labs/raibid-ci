@@ -202,95 +202,158 @@ pub struct ValidationError {
 impl fmt::Display for InfraError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            InfraError::Download { component, url, reason, suggestion } => {
+            InfraError::Download {
+                component,
+                url,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Failed to download {} from {}\nReason: {}\nSuggestion: {}",
                     component, url, reason, suggestion
                 )
             }
-            InfraError::ChecksumMismatch { component, expected, actual, file_path } => {
+            InfraError::ChecksumMismatch {
+                component,
+                expected,
+                actual,
+                file_path,
+            } => {
                 write!(
                     f,
                     "Checksum verification failed for {}\nFile: {}\nExpected: {}\nActual: {}\nSuggestion: The downloaded file may be corrupted. Please retry the installation.",
                     component, file_path, expected, actual
                 )
             }
-            InfraError::Network { operation, reason, suggestion } => {
+            InfraError::Network {
+                operation,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Network error during {}\nReason: {}\nSuggestion: {}",
                     operation, reason, suggestion
                 )
             }
-            InfraError::Installation { component, phase, reason, suggestion } => {
+            InfraError::Installation {
+                component,
+                phase,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Installation failed for {} during {}\nReason: {}\nSuggestion: {}",
                     component, phase, reason, suggestion
                 )
             }
-            InfraError::Configuration { component, field, reason, suggestion } => {
+            InfraError::Configuration {
+                component,
+                field,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Configuration error for {}\nField: {}\nReason: {}\nSuggestion: {}",
                     component, field, reason, suggestion
                 )
             }
-            InfraError::PrerequisiteMissing { component, prerequisite, suggestion } => {
+            InfraError::PrerequisiteMissing {
+                component,
+                prerequisite,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Missing prerequisite for {}: {}\nSuggestion: {}",
                     component, prerequisite, suggestion
                 )
             }
-            InfraError::CommandFailed { command, exit_code, stdout, stderr, suggestion } => {
+            InfraError::CommandFailed {
+                command,
+                exit_code,
+                stdout,
+                stderr,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Command failed: {}\nExit code: {}\nStdout: {}\nStderr: {}\nSuggestion: {}",
                     command,
-                    exit_code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".to_string()),
+                    exit_code
+                        .map(|c| c.to_string())
+                        .unwrap_or_else(|| "unknown".to_string()),
                     stdout,
                     stderr,
                     suggestion
                 )
             }
-            InfraError::Kubernetes { operation, resource, reason, suggestion } => {
+            InfraError::Kubernetes {
+                operation,
+                resource,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Kubernetes {} operation failed for {}\nReason: {}\nSuggestion: {}",
                     operation, resource, reason, suggestion
                 )
             }
-            InfraError::Helm { operation, chart, reason, suggestion } => {
+            InfraError::Helm {
+                operation,
+                chart,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Helm {} operation failed for chart '{}'\nReason: {}\nSuggestion: {}",
                     operation, chart, reason, suggestion
                 )
             }
-            InfraError::Timeout { operation, duration, suggestion } => {
+            InfraError::Timeout {
+                operation,
+                duration,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Operation timed out: {}\nDuration: {:?}\nSuggestion: {}",
                     operation, duration, suggestion
                 )
             }
-            InfraError::HealthCheck { component, check, reason, suggestion } => {
+            InfraError::HealthCheck {
+                component,
+                check,
+                reason,
+                suggestion,
+            } => {
                 write!(
                     f,
                     "Health check failed for {}: {}\nReason: {}\nSuggestion: {}",
                     component, check, reason, suggestion
                 )
             }
-            InfraError::Rollback { component, reason, partial_cleanup } => {
+            InfraError::Rollback {
+                component,
+                reason,
+                partial_cleanup,
+            } => {
                 write!(
                     f,
                     "Rollback failed for {}\nReason: {}\nPartially cleaned up: {:?}",
                     component, reason, partial_cleanup
                 )
             }
-            InfraError::FileSystem { operation, path, reason } => {
+            InfraError::FileSystem {
+                operation,
+                path,
+                reason,
+            } => {
                 write!(
                     f,
                     "File system error during {}\nPath: {}\nReason: {}",
@@ -298,13 +361,17 @@ impl fmt::Display for InfraError {
                 )
             }
             InfraError::Validation { component, errors } => {
-                write!(f, "Validation failed for {}:\n", component)?;
+                writeln!(f, "Validation failed for {}:", component)?;
                 for err in errors {
-                    write!(f, "  - {}: {}\n", err.field, err.message)?;
+                    writeln!(f, "  - {}: {}", err.field, err.message)?;
                 }
                 Ok(())
             }
-            InfraError::Transient { operation, reason, retry_after } => {
+            InfraError::Transient {
+                operation,
+                reason,
+                retry_after,
+            } => {
                 write!(
                     f,
                     "Transient error during {}\nReason: {}\n{}",
@@ -317,10 +384,18 @@ impl fmt::Display for InfraError {
                     }
                 )
             }
-            InfraError::Fatal { component, reason, context } => {
-                write!(f, "Fatal error in {}\nReason: {}\nContext:\n", component, reason)?;
+            InfraError::Fatal {
+                component,
+                reason,
+                context,
+            } => {
+                write!(
+                    f,
+                    "Fatal error in {}\nReason: {}\nContext:\n",
+                    component, reason
+                )?;
                 for ctx in context {
-                    write!(f, "  - {}\n", ctx)?;
+                    writeln!(f, "  - {}", ctx)?;
                 }
                 Ok(())
             }
@@ -334,7 +409,11 @@ impl std::error::Error for InfraError {}
 impl InfraError {
     /// Create a download error
     #[allow(dead_code)]
-    pub fn download(component: impl Into<String>, url: impl Into<String>, reason: impl Into<String>) -> Self {
+    pub fn download(
+        component: impl Into<String>,
+        url: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Self {
         let component = component.into();
         let url = url.into();
         let reason = reason.into();
@@ -342,7 +421,8 @@ impl InfraError {
         let suggestion = if reason.contains("404") || reason.contains("not found") {
             "Verify the URL is correct and the resource exists.".to_string()
         } else if reason.contains("timeout") || reason.contains("timed out") {
-            "Check your network connection and try again. Consider increasing timeout settings.".to_string()
+            "Check your network connection and try again. Consider increasing timeout settings."
+                .to_string()
         } else if reason.contains("DNS") || reason.contains("name resolution") {
             "Check your DNS settings and network connectivity.".to_string()
         } else {
@@ -389,14 +469,27 @@ impl InfraError {
         let reason = reason.into();
 
         let suggestion = match phase {
-            InstallPhase::PreFlight => "Ensure all prerequisites are installed and system requirements are met.".to_string(),
+            InstallPhase::PreFlight => {
+                "Ensure all prerequisites are installed and system requirements are met."
+                    .to_string()
+            }
             InstallPhase::Download => "Check network connectivity and disk space.".to_string(),
-            InstallPhase::Verification => "The downloaded file may be corrupted. Try downloading again.".to_string(),
-            InstallPhase::Installation => "Check for sufficient permissions and disk space.".to_string(),
-            InstallPhase::Configuration => "Review the configuration parameters and correct any invalid values.".to_string(),
+            InstallPhase::Verification => {
+                "The downloaded file may be corrupted. Try downloading again.".to_string()
+            }
+            InstallPhase::Installation => {
+                "Check for sufficient permissions and disk space.".to_string()
+            }
+            InstallPhase::Configuration => {
+                "Review the configuration parameters and correct any invalid values.".to_string()
+            }
             InstallPhase::Bootstrap => "Ensure the cluster is accessible and healthy.".to_string(),
-            InstallPhase::Validation => "Check component logs for detailed error information.".to_string(),
-            InstallPhase::PostInstall => "Review post-installation requirements and dependencies.".to_string(),
+            InstallPhase::Validation => {
+                "Check component logs for detailed error information.".to_string()
+            }
+            InstallPhase::PostInstall => {
+                "Review post-installation requirements and dependencies.".to_string()
+            }
         };
 
         InfraError::Installation {
@@ -444,13 +537,7 @@ where
     E: std::error::Error,
 {
     fn infra_context(self, component: &str, phase: InstallPhase) -> InfraResult<T> {
-        self.map_err(|e| {
-            InfraError::installation(
-                component,
-                phase,
-                e.to_string(),
-            )
-        })
+        self.map_err(|e| InfraError::installation(component, phase, e.to_string()))
     }
 }
 

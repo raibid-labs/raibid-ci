@@ -8,7 +8,7 @@ Successfully designed and implemented an event-driven orchestration system for r
 
 ### 1. Design Documentation
 
-**File**: `/home/beengud/raibid-labs/raibid-cli/docs/EVENT_DRIVEN_ORCHESTRATION.md`
+**File**: `/home/beengud/raibid-labs/raibid-cli/docs/architecture/event-driven-orchestration.md`
 
 Comprehensive design document covering:
 - Current state analysis (polling system problems)
@@ -143,7 +143,7 @@ Quick reference guide covering:
 │       ├── spawn-agent-comment.sh                  # Spawn trigger poster
 │       └── assign-next-issue.sh                    # Next issue finder
 └── docs/
-    ├── EVENT_DRIVEN_ORCHESTRATION.md               # Design document
+    ├── architecture/event-driven-orchestration.md               # Design document
     ├── ORCHESTRATOR_AGENT.md                       # Updated instructions (existing)
     ├── TESTING_EVENT_DRIVEN_ORCHESTRATION.md       # Test plan
     └── EVENT_DRIVEN_IMPLEMENTATION_SUMMARY.md      # This file
@@ -278,7 +278,7 @@ If critical failure occurs:
 
 ## Documentation Links
 
-- **Design**: [EVENT_DRIVEN_ORCHESTRATION.md](EVENT_DRIVEN_ORCHESTRATION.md)
+- **Design**: [architecture/event-driven-orchestration.md](architecture/event-driven-orchestration.md)
 - **Orchestrator Instructions**: [ORCHESTRATOR_AGENT.md](ORCHESTRATOR_AGENT.md)
 - **Testing Guide**: [TESTING_EVENT_DRIVEN_ORCHESTRATION.md](TESTING_EVENT_DRIVEN_ORCHESTRATION.md)
 - **Workflows Documentation**: [.github/WORKFLOWS.md](../.github/WORKFLOWS.md)

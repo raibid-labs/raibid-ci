@@ -3,7 +3,7 @@
 //! This module handles deploying Redis with Helm to k3s cluster and configuring
 //! Redis Streams for job queue management.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -75,9 +75,9 @@ impl Default for RedisConfig {
             persistence_enabled: true,
             persistence_size: "8Gi".to_string(),
             auth_enabled: true,
-            password: None, // Auto-generate
+            password: None,          // Auto-generate
             sentinel_enabled: false, // MVP: single instance
-            replica_count: 0, // MVP: no replicas
+            replica_count: 0,        // MVP: no replicas
             streams_config: RedisStreamsConfig::default(),
             kubeconfig_path: home.join(".kube").join("config"),
         }
@@ -122,18 +122,14 @@ impl RedisInstaller {
     /// Check if Helm is available
     #[allow(dead_code)]
     fn check_helm(&self) -> Result<()> {
-        let output = Command::new("helm")
-            .arg("version")
-            .output();
+        let output = Command::new("helm").arg("version").output();
 
         match output {
             Ok(out) if out.status.success() => {
                 debug!("helm is available");
                 Ok(())
             }
-            _ => Err(anyhow!(
-                "helm not found. Please install Helm 3.x"
-            )),
+            _ => Err(anyhow!("helm not found. Please install Helm 3.x")),
         }
     }
 
@@ -287,8 +283,7 @@ commonConfiguration: |-
         // Generate Helm values
         let values = self.generate_helm_values()?;
         let values_file = std::env::temp_dir().join("redis-values.yaml");
-        fs::write(&values_file, values)
-            .context("Failed to write Helm values file")?;
+        fs::write(&values_file, values).context("Failed to write Helm values file")?;
 
         // Build Helm install command
         let mut cmd = Command::new("helm");
@@ -311,8 +306,7 @@ commonConfiguration: |-
 
         debug!("Running Helm install: {:?}", cmd);
 
-        let output = cmd.output()
-            .context("Failed to run Helm install")?;
+        let output = cmd.output().context("Failed to run Helm install")?;
 
         // Clean up values file
         let _ = fs::remove_file(&values_file);
@@ -335,7 +329,7 @@ commonConfiguration: |-
             .arg("--for=condition=ready")
             .arg("pod")
             .arg("--selector")
-            .arg(format!("app.kubernetes.io/name=redis"))
+            .arg("app.kubernetes.io/name=redis")
             .arg("--namespace")
             .arg(&self.config.namespace)
             .arg("--timeout=300s")
@@ -354,9 +348,9 @@ commonConfiguration: |-
 
     /// Get Redis connection details
     pub fn get_connection_info(&self) -> Result<RedisConnectionInfo> {
-        let host = format!("{}-master.{}.svc.cluster.local",
-            self.config.release_name,
-            self.config.namespace
+        let host = format!(
+            "{}-master.{}.svc.cluster.local",
+            self.config.release_name, self.config.namespace
         );
         let port = 6379;
         let password = self.config.password.clone();
@@ -387,8 +381,7 @@ commonConfiguration: |-
         } else {
             format!(
                 "redis-cli XGROUP CREATE {} {} $ MKSTREAM",
-                self.config.streams_config.queue_stream,
-                self.config.streams_config.consumer_group,
+                self.config.streams_config.queue_stream, self.config.streams_config.consumer_group,
             )
         };
 
@@ -506,8 +499,7 @@ commonConfiguration: |-
         let json = serde_json::to_string_pretty(&credentials)
             .context("Failed to serialize credentials")?;
 
-        fs::write(path, json)
-            .context("Failed to write credentials file")?;
+        fs::write(path, json).context("Failed to write credentials file")?;
 
         // Set proper permissions (600)
         #[cfg(unix)]
@@ -681,7 +673,10 @@ mod tests {
         };
 
         let url = conn_info.connection_url();
-        assert_eq!(url, "redis://:testpass@redis-master.raibid-redis.svc.cluster.local:6379");
+        assert_eq!(
+            url,
+            "redis://:testpass@redis-master.raibid-redis.svc.cluster.local:6379"
+        );
     }
 
     #[test]
@@ -694,6 +689,9 @@ mod tests {
         };
 
         let url = conn_info.connection_url();
-        assert_eq!(url, "redis://redis-master.raibid-redis.svc.cluster.local:6379");
+        assert_eq!(
+            url,
+            "redis://redis-master.raibid-redis.svc.cluster.local:6379"
+        );
     }
 }
