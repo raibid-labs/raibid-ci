@@ -733,11 +733,26 @@ You may choose either license for your use.
 - CLI parsing with [clap](https://github.com/clap-rs/clap)
 - Optimized for [NVIDIA DGX Spark](https://www.nvidia.com/en-us/data-center/dgx-spark/)
 
+## Documentation
+
+Comprehensive documentation for installation, operation, and development:
+
+### Getting Started
+- **[Installation Guide](docs/INSTALLATION.md)** - Complete setup from bare metal to operational system
+- **[User Guide](docs/USER_GUIDE.md)** - Usage instructions and examples
+
+### Operations
+- **[Operations Runbook](docs/OPERATIONS.md)** - Maintenance, troubleshooting, and incident response
+- **[API Documentation](docs/API.md)** - REST API reference and examples
+
+### Development
+- **[Tilt Development Guide](TILT.md)** - Local development with Tilt and Tanka
+- **[Tanka Configuration](tanka/README.md)** - Kubernetes deployment with Jsonnet
+- **[Orchestrator Guide](ORCHESTRATOR.md)** - Multi-agent development system
+
 ## Links
 
 - **Documentation**: [docs/](docs/)
-- **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-- **Orchestrator Guide**: [ORCHESTRATOR.md](ORCHESTRATOR.md) - Multi-agent development system
 - **GitHub Repository**: https://github.com/raibid-labs/raibid-cli
 - **Issue Tracker**: https://github.com/raibid-labs/raibid-cli/issues
 
@@ -745,5 +760,5 @@ You may choose either license for your use.
 
 **Built for developers, by developers. Optimized for NVIDIA DGX Spark.**
 
-*Last Updated: 2025-10-30*
+*Last Updated: 2025-11-03*
 *Status: WS-01 & WS-04 Complete - Production Infrastructure Ready* 🚀

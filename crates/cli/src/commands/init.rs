@@ -5,11 +5,11 @@
 
 use anyhow::Result;
 use colored::Colorize;
+use raibid_common::infrastructure::{
+    FluxConfig, FluxInstaller, GiteaInstaller, K3sInstaller, KedaInstaller, RedisInstaller,
+};
 use std::thread;
 use std::time::Duration;
-use raibid_common::infrastructure::{
-    K3sInstaller, GiteaInstaller, RedisInstaller, KedaInstaller, FluxInstaller, FluxConfig,
-};
 
 use crate::cli::InitSubcommand;
 
@@ -54,7 +54,10 @@ fn init_all(dry_run: bool, skip_checks: bool) -> Result<()> {
     print_header("all components");
 
     if dry_run {
-        println!("{}", "DRY-RUN MODE: No changes will be made".yellow().bold());
+        println!(
+            "{}",
+            "DRY-RUN MODE: No changes will be made".yellow().bold()
+        );
         println!();
     }
 
@@ -67,7 +70,10 @@ fn init_all(dry_run: bool, skip_checks: bool) -> Result<()> {
     println!();
 
     if dry_run {
-        println!("{}", "Components would be installed in this order to respect dependencies.".dimmed());
+        println!(
+            "{}",
+            "Components would be installed in this order to respect dependencies.".dimmed()
+        );
         return Ok(());
     }
 
@@ -101,13 +107,16 @@ fn init_k3s(dry_run: bool, skip_checks: bool, version: Option<&str>, rootless: b
     print_header("k3s");
 
     if dry_run {
-        print_dry_run_plan("k3s", &[
-            "Download k3s binary",
-            "Verify checksum",
-            "Install k3s service",
-            "Start k3s cluster",
-            "Configure kubectl",
-        ]);
+        print_dry_run_plan(
+            "k3s",
+            &[
+                "Download k3s binary",
+                "Verify checksum",
+                "Install k3s service",
+                "Start k3s cluster",
+                "Configure kubectl",
+            ],
+        );
         return Ok(());
     }
 
@@ -202,15 +211,18 @@ fn init_gitea(
     print_header("Gitea");
 
     if dry_run {
-        print_dry_run_plan("Gitea", &[
-            "Check prerequisites",
-            "Install Helm if needed",
-            "Create Gitea namespace",
-            "Add Gitea Helm repository",
-            "Deploy Gitea Helm chart",
-            "Wait for pods to be ready",
-            "Configure OCI registry",
-        ]);
+        print_dry_run_plan(
+            "Gitea",
+            &[
+                "Check prerequisites",
+                "Install Helm if needed",
+                "Create Gitea namespace",
+                "Add Gitea Helm repository",
+                "Deploy Gitea Helm chart",
+                "Wait for pods to be ready",
+                "Configure OCI registry",
+            ],
+        );
         return Ok(());
     }
 
@@ -248,7 +260,10 @@ fn init_gitea(
         println!("{}", "done".green());
 
         // Deploy Helm chart
-        print!("  {} Deploying Gitea Helm chart (this may take several minutes)... ", "→".blue());
+        print!(
+            "  {} Deploying Gitea Helm chart (this may take several minutes)... ",
+            "→".blue()
+        );
         installer.deploy_helm_chart()?;
         println!("{}", "done".green());
 
@@ -270,11 +285,23 @@ fn init_gitea(
         // Print access information
         println!();
         println!("{}", "Gitea Access Information:".bold().cyan());
-        println!("  {} URL: {}", "→".blue(), service_info.access_url().bold().green());
+        println!(
+            "  {} URL: {}",
+            "→".blue(),
+            service_info.access_url().bold().green()
+        );
 
         let (admin_username, admin_password) = installer.get_credentials();
-        println!("  {} Admin username: {}", "→".blue(), admin_username.bold().yellow());
-        println!("  {} Admin password: {}", "→".blue(), admin_password.bold().yellow());
+        println!(
+            "  {} Admin username: {}",
+            "→".blue(),
+            admin_username.bold().yellow()
+        );
+        println!(
+            "  {} Admin password: {}",
+            "→".blue(),
+            admin_password.bold().yellow()
+        );
 
         // Save credentials for Flux to use later
         let home = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("/root"));
@@ -297,7 +324,12 @@ fn init_gitea(
         }
 
         println!();
-        println!("{}", "⚠ Credentials saved securely for Flux integration".yellow().bold());
+        println!(
+            "{}",
+            "⚠ Credentials saved securely for Flux integration"
+                .yellow()
+                .bold()
+        );
         println!("  {} {}", "→".blue(), creds_path.display());
 
         Ok(())
@@ -333,14 +365,17 @@ fn init_redis(dry_run: bool, skip_checks: bool, persistence: bool) -> Result<()>
     print_header("Redis");
 
     if dry_run {
-        print_dry_run_plan("Redis", &[
-            "Add Bitnami Helm repository",
-            "Create Redis namespace",
-            "Deploy Redis Helm chart",
-            "Wait for Redis to be ready",
-            "Initialize Redis Streams",
-            "Validate installation",
-        ]);
+        print_dry_run_plan(
+            "Redis",
+            &[
+                "Add Bitnami Helm repository",
+                "Create Redis namespace",
+                "Deploy Redis Helm chart",
+                "Wait for Redis to be ready",
+                "Initialize Redis Streams",
+                "Validate installation",
+            ],
+        );
         return Ok(());
     }
 
@@ -405,9 +440,17 @@ fn init_redis(dry_run: bool, skip_checks: bool, persistence: bool) -> Result<()>
         println!();
         println!("{}", "Redis connection details:".bold().green());
         println!("  {} Host: {}", "→".blue(), conn_info.host.bold());
-        println!("  {} Port: {}", "→".blue(), conn_info.port.to_string().bold());
+        println!(
+            "  {} Port: {}",
+            "→".blue(),
+            conn_info.port.to_string().bold()
+        );
         println!("  {} Namespace: {}", "→".blue(), conn_info.namespace.bold());
-        println!("  {} Credentials saved to: {}", "→".blue(), creds_path.display().to_string().bold());
+        println!(
+            "  {} Credentials saved to: {}",
+            "→".blue(),
+            creds_path.display().to_string().bold()
+        );
 
         Ok(())
     })();
@@ -439,15 +482,18 @@ fn init_keda(dry_run: bool, skip_checks: bool) -> Result<()> {
     print_header("KEDA");
 
     if dry_run {
-        print_dry_run_plan("KEDA", &[
-            "Check Helm",
-            "Add KEDA Helm repository",
-            "Create KEDA namespace",
-            "Deploy KEDA operators",
-            "Wait for KEDA to be ready",
-            "Validate installation",
-            "Create ScaledObject for Redis Streams",
-        ]);
+        print_dry_run_plan(
+            "KEDA",
+            &[
+                "Check Helm",
+                "Add KEDA Helm repository",
+                "Create KEDA namespace",
+                "Deploy KEDA operators",
+                "Wait for KEDA to be ready",
+                "Validate installation",
+                "Create ScaledObject for Redis Streams",
+            ],
+        );
         return Ok(());
     }
 
@@ -493,7 +539,10 @@ fn init_keda(dry_run: bool, skip_checks: bool) -> Result<()> {
         println!("{}", "done".green());
 
         // Create ScaledObject for Redis Streams
-        print!("  {} Creating ScaledObject for Redis Streams... ", "→".blue());
+        print!(
+            "  {} Creating ScaledObject for Redis Streams... ",
+            "→".blue()
+        );
         installer.create_scaled_object()?;
         println!("{}", "done".green());
 
@@ -541,16 +590,19 @@ fn init_flux(dry_run: bool, skip_checks: bool, _repo_path: Option<&str>) -> Resu
     print_header("Flux");
 
     if dry_run {
-        print_dry_run_plan("Flux", &[
-            "Check for Flux CLI",
-            "Download Flux CLI if needed",
-            "Verify checksum",
-            "Install Flux CLI",
-            "Bootstrap Flux with Gitea",
-            "Configure image automation",
-            "Configure notifications",
-            "Validate installation",
-        ]);
+        print_dry_run_plan(
+            "Flux",
+            &[
+                "Check for Flux CLI",
+                "Download Flux CLI if needed",
+                "Verify checksum",
+                "Install Flux CLI",
+                "Bootstrap Flux with Gitea",
+                "Configure image automation",
+                "Configure notifications",
+                "Validate installation",
+            ],
+        );
         return Ok(());
     }
 
@@ -704,9 +756,15 @@ fn print_header(component: &str) {
 }
 
 fn print_dry_run_plan(component: &str, steps: &[&str]) {
-    println!("{}", "DRY-RUN MODE: No changes will be made".yellow().bold());
+    println!(
+        "{}",
+        "DRY-RUN MODE: No changes will be made".yellow().bold()
+    );
     println!();
-    println!("{}", format!("The following steps would be performed for {}:", component).bold());
+    println!(
+        "{}",
+        format!("The following steps would be performed for {}:", component).bold()
+    );
 
     for (i, step) in steps.iter().enumerate() {
         println!("  {} {}", format!("{}.", i + 1).blue(), step);

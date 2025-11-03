@@ -5,13 +5,12 @@
 
 use anyhow::Result;
 use colored::Colorize;
-use comfy_table::{Table, Row, Cell, Color, Attribute, ContentArrangement, presets::UTF8_FULL};
+use comfy_table::{presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table};
 
 use crate::commands::setup::Component;
 use raibid_common::infrastructure::{
-    ComponentStatusChecker, K3sStatusChecker, GiteaStatusChecker,
-    RedisStatusChecker, KedaStatusChecker, FluxStatusChecker,
-    ComponentStatus, ComponentHealth,
+    ComponentHealth, ComponentStatus, ComponentStatusChecker, FluxStatusChecker,
+    GiteaStatusChecker, K3sStatusChecker, KedaStatusChecker, RedisStatusChecker,
 };
 
 /// Execute the health command
@@ -83,11 +82,18 @@ async fn check_all_health(json: bool) -> Result<()> {
 
         // Print summary
         println!();
-        let healthy_count = statuses.iter().filter(|s| s.health == ComponentHealth::Healthy).count();
+        let healthy_count = statuses
+            .iter()
+            .filter(|s| s.health == ComponentHealth::Healthy)
+            .count();
         let total = statuses.len();
 
         if all_healthy {
-            println!("{} All {} components are healthy!", "✓".bold().green(), total);
+            println!(
+                "{} All {} components are healthy!",
+                "✓".bold().green(),
+                total
+            );
         } else {
             println!(
                 "{} {} of {} components are healthy",
@@ -209,14 +215,20 @@ fn print_health_table(statuses: &[ComponentStatus]) {
         row.add_cell(
             Cell::new(&status.name)
                 .add_attribute(Attribute::Bold)
-                .fg(Color::Cyan)
+                .fg(Color::Cyan),
         );
 
         // Health status with color and icon
         let health_cell = match status.health {
-            ComponentHealth::Healthy => Cell::new("✓ Healthy").fg(Color::Green).add_attribute(Attribute::Bold),
-            ComponentHealth::Degraded => Cell::new("⚠ Degraded").fg(Color::Yellow).add_attribute(Attribute::Bold),
-            ComponentHealth::Unhealthy => Cell::new("✗ Unhealthy").fg(Color::Red).add_attribute(Attribute::Bold),
+            ComponentHealth::Healthy => Cell::new("✓ Healthy")
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            ComponentHealth::Degraded => Cell::new("⚠ Degraded")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
+            ComponentHealth::Unhealthy => Cell::new("✗ Unhealthy")
+                .fg(Color::Red)
+                .add_attribute(Attribute::Bold),
             ComponentHealth::Unknown => Cell::new("? Unknown").fg(Color::Grey),
         };
         row.add_cell(health_cell);
@@ -235,7 +247,9 @@ fn print_health_table(statuses: &[ComponentStatus]) {
         row.add_cell(pod_cell);
 
         // Version
-        let version = status.version.as_ref()
+        let version = status
+            .version
+            .as_ref()
             .map(|v| v.version.clone())
             .unwrap_or_else(|| "N/A".to_string());
         row.add_cell(Cell::new(&version));
@@ -263,7 +277,11 @@ fn print_health_table(statuses: &[ComponentStatus]) {
 fn print_detailed_health(status: &ComponentStatus) -> Result<()> {
     // Overall Health
     println!("{}", "Overall Health:".bold());
-    println!("  {} {}", "Status:".dimmed(), status.health.colorized_detailed());
+    println!(
+        "  {} {}",
+        "Status:".dimmed(),
+        status.health.colorized_detailed()
+    );
     println!();
 
     // Component Information
@@ -421,7 +439,11 @@ fn get_health_issues(status: &ComponentStatus) -> Vec<String> {
     let ready_pods = status.pods.iter().filter(|p| p.ready).count();
 
     if total_pods > 0 && ready_pods < total_pods {
-        issues.push(format!("{}/{} pods not ready", total_pods - ready_pods, total_pods));
+        issues.push(format!(
+            "{}/{} pods not ready",
+            total_pods - ready_pods,
+            total_pods
+        ));
     }
 
     // Check restarts

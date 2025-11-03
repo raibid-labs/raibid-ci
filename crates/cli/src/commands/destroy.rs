@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use colored::Colorize;
-use dialoguer::{Confirm, theme::ColorfulTheme};
+use dialoguer::{theme::ColorfulTheme, Confirm};
 use std::thread;
 use std::time::Duration;
 
@@ -43,7 +43,10 @@ fn destroy_all(yes: bool, dry_run: bool, force: bool) -> Result<()> {
     println!();
 
     if dry_run {
-        println!("{}", "DRY-RUN MODE: No changes will be made".yellow().bold());
+        println!(
+            "{}",
+            "DRY-RUN MODE: No changes will be made".yellow().bold()
+        );
         println!();
 
         for component in components {
@@ -56,7 +59,12 @@ fn destroy_all(yes: bool, dry_run: bool, force: bool) -> Result<()> {
 
     // Confirm destruction
     if !yes {
-        println!("{}", "⚠ WARNING: This action is destructive and cannot be undone!".red().bold());
+        println!(
+            "{}",
+            "⚠ WARNING: This action is destructive and cannot be undone!"
+                .red()
+                .bold()
+        );
         println!();
 
         let confirmed = Confirm::with_theme(&ColorfulTheme::default())
@@ -100,9 +108,7 @@ fn destroy_all(yes: bool, dry_run: bool, force: bool) -> Result<()> {
 fn destroy_component(component: Component, yes: bool, dry_run: bool, force: bool) -> Result<()> {
     println!(
         "{} {}",
-        format!("Destroying {}...", component.name())
-            .bold()
-            .red(),
+        format!("Destroying {}...", component.name()).bold().red(),
         "🗑️".bold()
     );
     println!();
@@ -111,7 +117,10 @@ fn destroy_component(component: Component, yes: bool, dry_run: bool, force: bool
     show_destroy_info(component)?;
 
     if dry_run {
-        println!("{}", "DRY-RUN MODE: No changes will be made".yellow().bold());
+        println!(
+            "{}",
+            "DRY-RUN MODE: No changes will be made".yellow().bold()
+        );
         println!();
         show_destroy_plan(component)?;
         return Ok(());
@@ -124,11 +133,19 @@ fn destroy_component(component: Component, yes: bool, dry_run: bool, force: bool
 
     // Confirm destruction
     if !yes {
-        println!("{}", "⚠ WARNING: This action is destructive and cannot be undone!".red().bold());
+        println!(
+            "{}",
+            "⚠ WARNING: This action is destructive and cannot be undone!"
+                .red()
+                .bold()
+        );
         println!();
 
         let confirmed = Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt(format!("Are you sure you want to destroy {}?", component.name()))
+            .with_prompt(format!(
+                "Are you sure you want to destroy {}?",
+                component.name()
+            ))
             .default(false)
             .interact()?;
 
@@ -263,106 +280,134 @@ fn show_destroy_info(component: Component) -> Result<()> {
 
 /// Show detailed destroy plan for dry-run
 fn show_destroy_plan(component: Component) -> Result<()> {
-    println!("{}", format!("Destroy plan for {}:", component.name()).bold().yellow());
+    println!(
+        "{}",
+        format!("Destroy plan for {}:", component.name())
+            .bold()
+            .yellow()
+    );
 
     let plan = match component {
         Component::K3s => vec![
-            ("Pre-checks", vec![
-                "Verify no critical workloads running",
-                "Check for dependent components",
-                "Backup current state (if requested)",
-            ]),
-            ("Graceful shutdown", vec![
-                "Drain all nodes",
-                "Stop k3s service",
-                "Wait for pod termination",
-            ]),
-            ("Cleanup", vec![
-                "Remove k3s binaries",
-                "Delete container runtime data",
-                "Remove configuration files",
-                "Delete /var/lib/rancher/k3s",
-            ]),
-            ("Verification", vec![
-                "Verify all processes stopped",
-                "Verify all files removed",
-            ]),
+            (
+                "Pre-checks",
+                vec![
+                    "Verify no critical workloads running",
+                    "Check for dependent components",
+                    "Backup current state (if requested)",
+                ],
+            ),
+            (
+                "Graceful shutdown",
+                vec![
+                    "Drain all nodes",
+                    "Stop k3s service",
+                    "Wait for pod termination",
+                ],
+            ),
+            (
+                "Cleanup",
+                vec![
+                    "Remove k3s binaries",
+                    "Delete container runtime data",
+                    "Remove configuration files",
+                    "Delete /var/lib/rancher/k3s",
+                ],
+            ),
+            (
+                "Verification",
+                vec!["Verify all processes stopped", "Verify all files removed"],
+            ),
         ],
         Component::Gitea => vec![
-            ("Pre-checks", vec![
-                "Check if Flux depends on Gitea",
-                "List repositories (for backup)",
-            ]),
-            ("Graceful shutdown", vec![
-                "Scale deployment to 0",
-                "Wait for pod termination",
-            ]),
-            ("Cleanup", vec![
-                "Delete Helm release",
-                "Delete persistent volumes",
-                "Delete namespace",
-            ]),
-            ("Verification", vec![
-                "Verify namespace deleted",
-                "Verify PVs released",
-            ]),
+            (
+                "Pre-checks",
+                vec![
+                    "Check if Flux depends on Gitea",
+                    "List repositories (for backup)",
+                ],
+            ),
+            (
+                "Graceful shutdown",
+                vec!["Scale deployment to 0", "Wait for pod termination"],
+            ),
+            (
+                "Cleanup",
+                vec![
+                    "Delete Helm release",
+                    "Delete persistent volumes",
+                    "Delete namespace",
+                ],
+            ),
+            (
+                "Verification",
+                vec!["Verify namespace deleted", "Verify PVs released"],
+            ),
         ],
         Component::Redis => vec![
-            ("Pre-checks", vec![
-                "Check for active jobs",
-                "Check if KEDA depends on Redis",
-            ]),
-            ("Graceful shutdown", vec![
-                "Flush all queues (if requested)",
-                "Stop Redis pods",
-            ]),
-            ("Cleanup", vec![
-                "Delete Helm release",
-                "Delete persistent volumes",
-                "Delete namespace",
-            ]),
-            ("Verification", vec![
-                "Verify namespace deleted",
-                "Verify PVs released",
-            ]),
+            (
+                "Pre-checks",
+                vec!["Check for active jobs", "Check if KEDA depends on Redis"],
+            ),
+            (
+                "Graceful shutdown",
+                vec!["Flush all queues (if requested)", "Stop Redis pods"],
+            ),
+            (
+                "Cleanup",
+                vec![
+                    "Delete Helm release",
+                    "Delete persistent volumes",
+                    "Delete namespace",
+                ],
+            ),
+            (
+                "Verification",
+                vec!["Verify namespace deleted", "Verify PVs released"],
+            ),
         ],
         Component::Keda => vec![
-            ("Pre-checks", vec![
-                "List all ScaledObjects",
-                "Check for active autoscaling",
-            ]),
-            ("Graceful shutdown", vec![
-                "Delete all ScaledObjects",
-                "Stop KEDA operator",
-            ]),
-            ("Cleanup", vec![
-                "Delete Helm release",
-                "Delete CRDs",
-                "Delete namespace",
-            ]),
-            ("Verification", vec![
-                "Verify CRDs deleted",
-                "Verify namespace deleted",
-            ]),
+            (
+                "Pre-checks",
+                vec!["List all ScaledObjects", "Check for active autoscaling"],
+            ),
+            (
+                "Graceful shutdown",
+                vec!["Delete all ScaledObjects", "Stop KEDA operator"],
+            ),
+            (
+                "Cleanup",
+                vec!["Delete Helm release", "Delete CRDs", "Delete namespace"],
+            ),
+            (
+                "Verification",
+                vec!["Verify CRDs deleted", "Verify namespace deleted"],
+            ),
         ],
         Component::Flux => vec![
-            ("Pre-checks", vec![
-                "List all Flux resources",
-                "Check for pending reconciliations",
-            ]),
-            ("Graceful shutdown", vec![
-                "Suspend all reconciliations",
-                "Stop Flux controllers",
-            ]),
-            ("Cleanup", vec![
-                "Uninstall Flux",
-                "Delete GitOps configurations",
-                "Delete namespace",
-            ]),
-            ("Verification", vec![
-                "Verify Flux uninstalled",
-                "Verify namespace deleted",
-            ]),
+            (
+                "Pre-checks",
+                vec![
+                    "List all Flux resources",
+                    "Check for pending reconciliations",
+                ],
+            ),
+            (
+                "Graceful shutdown",
+                vec!["Suspend all reconciliations", "Stop Flux controllers"],
+            ),
+            (
+                "Cleanup",
+                vec![
+                    "Uninstall Flux",
+                    "Delete GitOps configurations",
+                    "Delete namespace",
+                ],
+            ),
+            (
+                "Verification",
+                vec!["Verify Flux uninstalled", "Verify namespace deleted"],
+            ),
         ],
         Component::All => vec![],
     };
@@ -396,7 +441,10 @@ fn check_dependencies(component: Component) -> Result<()> {
         println!();
         println!("{}", "Options:".bold());
         println!("  {} Destroy dependents first", "1.".blue());
-        println!("  {} Use --force to destroy anyway (may break things!)", "2.".blue());
+        println!(
+            "  {} Use --force to destroy anyway (may break things!)",
+            "2.".blue()
+        );
         println!();
 
         return Err(anyhow::anyhow!(
