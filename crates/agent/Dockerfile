@@ -39,8 +39,43 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
-# Stage 2: Rust toolchain and cargo tools
-FROM base AS builder
+# Stage 2: Prepare cargo-chef
+FROM base AS chef
+RUN cargo install cargo-chef --locked
+WORKDIR /app
+
+# Stage 3: Generate recipe (dependency manifest)
+FROM chef AS planner
+# Copy the entire workspace to generate a complete recipe
+COPY . .
+# Generate recipe.json with all dependencies
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Stage 4: Build dependencies (cached layer)
+FROM chef AS dependencies
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies only - this layer is cached until dependencies change
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Stage 5: Build agent binary
+FROM chef AS agent-builder
+# Copy cached dependencies from previous stage
+COPY --from=dependencies /app/target target
+COPY --from=dependencies /usr/local/cargo /usr/local/cargo
+
+# Copy the full source tree
+COPY . .
+
+# Build the agent binary
+# Use workspace-aware build to handle crate dependencies
+RUN cargo build --release --bin raibid-agent
+
+# Verify binary was built
+RUN ls -lah /app/target/release/raibid-agent && \
+    file /app/target/release/raibid-agent
+
+# Stage 6: Build CI tools
+FROM base AS tools-builder
 
 # Install Rust tools for CI workflows
 RUN cargo install --locked \
@@ -52,13 +87,17 @@ RUN cargo install --locked \
     cargo-deny@0.14.24 \
     && rm -rf /usr/local/cargo/registry
 
-# Stage 3: Final runtime image
+# Stage 7: Final runtime image
 FROM base AS runtime
 
-# Copy installed cargo binaries from builder
-COPY --from=builder /usr/local/cargo/bin/cargo-nextest /usr/local/cargo/bin/
-COPY --from=builder /usr/local/cargo/bin/cargo-audit /usr/local/cargo/bin/
-COPY --from=builder /usr/local/cargo/bin/cargo-deny /usr/local/cargo/bin/
+# Copy installed cargo binaries from tools-builder
+COPY --from=tools-builder /usr/local/cargo/bin/cargo-nextest /usr/local/cargo/bin/
+COPY --from=tools-builder /usr/local/cargo/bin/cargo-audit /usr/local/cargo/bin/
+COPY --from=tools-builder /usr/local/cargo/bin/cargo-deny /usr/local/cargo/bin/
+
+# Copy agent binary from agent-builder
+COPY --from=agent-builder /app/target/release/raibid-agent /usr/local/bin/raibid-agent
+RUN chmod +x /usr/local/bin/raibid-agent
 
 # Create non-root user for agent execution
 RUN groupadd -r agent --gid=1000 \
@@ -82,10 +121,6 @@ RUN chown agent:agent /workspace
 COPY --chown=agent:agent healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
-# Copy agent binary (built separately in CI/CD)
-# This will be added when we build the agent implementation
-# COPY --from=agent-build /app/target/release/raibid-agent /usr/local/bin/raibid-agent
-
 # Switch to non-root user
 USER agent
 
@@ -94,6 +129,7 @@ ENV RUST_BACKTRACE=1
 ENV CARGO_HOME=/home/agent/.cargo
 ENV CARGO_TARGET_DIR=/workspace/target
 ENV CARGO_INCREMENTAL=1
+ENV RUST_LOG=info
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -109,5 +145,5 @@ LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 LABEL raibid.agent.type="rust"
 LABEL raibid.agent.arch="arm64"
 
-# Default command (will be overridden by agent binary)
-CMD ["/bin/bash"]
+# Run the agent
+CMD ["/usr/local/bin/raibid-agent"]
