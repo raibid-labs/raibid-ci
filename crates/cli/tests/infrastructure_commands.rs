@@ -3,6 +3,8 @@
 //! These tests verify that the CLI commands are properly wired up and
 //! can handle various argument combinations.
 
+#![allow(deprecated)]
+
 use assert_cmd::Command;
 use predicates::prelude::*;
 
@@ -26,7 +28,7 @@ fn test_help_shows_all_commands() {
 #[test]
 fn test_init_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "--help"]);
+    cmd.args(["init", "--help"]);
 
     cmd.assert()
         .success()
@@ -45,7 +47,7 @@ fn test_init_help() {
 #[test]
 fn test_init_k3s_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "k3s", "--help"]);
+    cmd.args(["init", "k3s", "--help"]);
 
     cmd.assert()
         .success()
@@ -62,7 +64,7 @@ fn test_init_k3s_help() {
 #[test]
 fn test_init_gitea_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "gitea", "--help"]);
+    cmd.args(["init", "gitea", "--help"]);
 
     cmd.assert()
         .success()
@@ -77,7 +79,7 @@ fn test_init_gitea_help() {
 #[test]
 fn test_init_redis_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "redis", "--help"]);
+    cmd.args(["init", "redis", "--help"]);
 
     cmd.assert()
         .success()
@@ -91,7 +93,7 @@ fn test_init_redis_help() {
 #[test]
 fn test_init_keda_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "keda", "--help"]);
+    cmd.args(["init", "keda", "--help"]);
 
     cmd.assert()
         .success()
@@ -104,7 +106,7 @@ fn test_init_keda_help() {
 #[test]
 fn test_init_flux_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "flux", "--help"]);
+    cmd.args(["init", "flux", "--help"]);
 
     cmd.assert()
         .success()
@@ -118,7 +120,7 @@ fn test_init_flux_help() {
 #[test]
 fn test_init_all_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["init", "all", "--help"]);
+    cmd.args(["init", "all", "--help"]);
 
     cmd.assert()
         .success()
@@ -131,7 +133,7 @@ fn test_init_all_help() {
 #[test]
 fn test_health_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["health", "--help"]);
+    cmd.args(["health", "--help"]);
 
     cmd.assert()
         .success()
@@ -144,7 +146,7 @@ fn test_health_help() {
 #[test]
 fn test_destroy_help() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["destroy", "--help"]);
+    cmd.args(["destroy", "--help"]);
 
     cmd.assert()
         .success()
@@ -197,7 +199,7 @@ fn test_init_visible_setup_hidden() {
 #[test]
 fn test_verbose_flag() {
     let mut cmd = Command::cargo_bin("raibid").unwrap();
-    cmd.args(&["-v", "init", "--help"]);
+    cmd.args(["-v", "init", "--help"]);
 
     cmd.assert().success();
 }

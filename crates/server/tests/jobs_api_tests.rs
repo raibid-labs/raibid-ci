@@ -9,9 +9,11 @@ async fn start_test_server(
     port: u16,
     redis_url: &str,
 ) -> (tokio::task::JoinHandle<()>, ServerConfig) {
-    let mut config = ServerConfig::default();
-    config.port = port;
-    config.redis_url = redis_url.to_string();
+    let config = ServerConfig {
+        port,
+        redis_url: redis_url.to_string(),
+        ..Default::default()
+    };
 
     // Create state with Redis
     let state = match AppState::with_redis(redis_url) {
