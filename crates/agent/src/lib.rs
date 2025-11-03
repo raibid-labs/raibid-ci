@@ -12,42 +12,44 @@
 
 #![allow(dead_code)]
 
-use anyhow::Result;
+use std::sync::Arc;
 
+pub mod config;
+pub mod consumer;
+pub mod error;
+pub mod executor;
+pub mod git;
 pub mod pipeline;
 
-// Re-export pipeline types
+// Re-export commonly used types
+pub use config::{AgentConfig, RedisConfig};
+pub use consumer::{JobConsumer, JobMessage};
+pub use error::{AgentError, AgentResult};
+pub use executor::JobExecutor;
+pub use git::GitManager;
 pub use pipeline::{
     ArtifactMetadata, BuildStep, PipelineConfig, PipelineExecutor, PipelineResult, StepResult,
 };
 
-/// Agent configuration
-pub struct AgentConfig {
-    pub agent_id: String,
-    pub agent_type: AgentType,
+/// Main Agent structure that orchestrates the CI agent
+pub struct Agent {
+    config: Arc<AgentConfig>,
+    consumer: JobConsumer,
 }
 
-/// Type of CI agent
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AgentType {
-    Rust,
-    // Future: Go, Node, Python, etc.
-}
+impl Agent {
+    /// Create a new agent instance
+    pub async fn new(config: AgentConfig) -> AgentResult<Self> {
+        let config = Arc::new(config);
+        let consumer = JobConsumer::new(config.clone()).await?;
 
-impl Default for AgentConfig {
-    fn default() -> Self {
-        Self {
-            agent_id: uuid::Uuid::new_v4().to_string(),
-            agent_type: AgentType::Rust,
-        }
+        Ok(Self { config, consumer })
     }
-}
 
-/// Start the CI agent
-pub async fn start_agent(_config: AgentConfig) -> Result<()> {
-    // Placeholder implementation
-    // Will be implemented in a future issue
-    anyhow::bail!("Agent implementation pending")
+    /// Run the agent
+    pub async fn run(self) -> AgentResult<()> {
+        self.consumer.run().await
+    }
 }
 
 #[cfg(test)]
@@ -57,6 +59,7 @@ mod tests {
     #[test]
     fn test_agent_config_default() {
         let config = AgentConfig::default();
-        assert_eq!(config.agent_type, AgentType::Rust);
+        assert!(!config.agent_id.is_empty());
+        assert_eq!(config.max_concurrent_jobs, 1);
     }
 }

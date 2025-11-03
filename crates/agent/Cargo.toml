@@ -35,5 +35,8 @@ uuid = { workspace = true }
 # Redis for job queue and log streaming
 redis = { workspace = true }
 
+# Git operations
+git2 = "0.18"
+
 [dev-dependencies]
 tempfile = { workspace = true }
