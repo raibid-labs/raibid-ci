@@ -1,0 +1,196 @@
+name: Scripts Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/scripts.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/scripts.yml'
+
+jobs:
+  validate-bash:
+    name: Validate Bash Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck on bash scripts
+        run: |
+          find scripts -name "*.sh" -type f -exec shellcheck {} +
+
+  validate-nushell:
+    name: Validate Nushell Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Nushell
+        run: |
+          # Install Nushell from GitHub releases
+          NUSHELL_VERSION="0.108.0"
+          curl -L "https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o nu.tar.gz
+          tar xzf nu.tar.gz
+          sudo mv "nu-${NUSHELL_VERSION}-x86_64-unknown-linux-gnu/nu" /usr/local/bin/
+          sudo chmod +x /usr/local/bin/nu
+          nu --version
+
+      - name: Validate Nushell syntax
+        run: |
+          echo "Validating Nushell scripts..."
+
+          # Find all .nu files
+          find scripts -name "*.nu" -type f | while read -r script; do
+            echo "Checking: $script"
+
+            # Try to parse the script (checks syntax)
+            if ! nu --commands "source $script" 2>&1 | grep -q "error"; then
+              echo "  ✓ Syntax OK"
+            else
+              echo "  ✗ Syntax error in $script"
+              nu --commands "source $script"
+              exit 1
+            fi
+          done
+
+          echo "All Nushell scripts validated successfully!"
+
+      - name: Test module imports
+        run: |
+          echo "Testing module imports..."
+
+          # Test that modules can be imported
+          nu --commands "
+            source scripts/nu/env.nu;
+            source scripts/nu/config.nu;
+            use scripts/nu/modules/kubectl.nu *;
+            use scripts/nu/modules/redis.nu *;
+            use scripts/nu/modules/gitea.nu *;
+            print 'All modules imported successfully'
+          "
+
+      - name: Test configuration loading
+        run: |
+          echo "Testing configuration loading..."
+
+          nu --commands "
+            source scripts/nu/env.nu;
+            source scripts/nu/config.nu;
+
+            # Test that functions are available
+            let info = (project-info);
+            print ('Project: ' + (\$info | get name));
+
+            # Test that environment variables are set
+            if 'RAIBID_ROOT' not-in \$env {
+              print 'Error: RAIBID_ROOT not set';
+              exit 1
+            };
+
+            print 'Configuration loaded successfully'
+          "
+
+      - name: Run version check
+        run: |
+          echo "Checking Nushell version requirement..."
+
+          nu --commands "
+            let nu_version = (version | get version);
+            let major = (\$nu_version | split row '.' | first | into int);
+            let minor = (\$nu_version | split row '.' | get 1 | into int);
+
+            if \$major == 0 and \$minor < 96 {
+              print 'Error: Nushell version must be 0.96 or later';
+              exit 1
+            };
+
+            print ('Nushell version ' + \$nu_version + ' meets requirements')
+          "
+
+  test-examples:
+    name: Test Example Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Nushell
+        run: |
+          NUSHELL_VERSION="0.108.0"
+          curl -L "https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-x86_64-unknown-linux-gnu.tar.gz" -o nu.tar.gz
+          tar xzf nu.tar.gz
+          sudo mv "nu-${NUSHELL_VERSION}-x86_64-unknown-linux-gnu/nu" /usr/local/bin/
+          sudo chmod +x /usr/local/bin/nu
+
+      - name: Test example scripts (syntax only)
+        run: |
+          echo "Testing example scripts (syntax validation)..."
+
+          # We can't fully run examples in CI without infrastructure,
+          # but we can validate syntax
+
+          for script in scripts/nu/examples/*.nu; do
+            echo "Validating: $script"
+            nu --commands "source $script" 2>&1 || {
+              echo "Failed to validate $script"
+              exit 1
+            }
+          done
+
+          echo "All example scripts validated!"
+
+  lint-scripts:
+    name: Lint Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check script permissions
+        run: |
+          echo "Checking script execute permissions..."
+
+          # Example scripts should be executable
+          for script in scripts/nu/examples/*.nu; do
+            if [ ! -x "$script" ]; then
+              echo "Warning: $script is not executable"
+              # Don't fail, just warn
+            fi
+          done
+
+      - name: Check script shebangs
+        run: |
+          echo "Checking script shebangs..."
+
+          # Example scripts should have shebangs
+          for script in scripts/nu/examples/*.nu; do
+            if ! head -n 1 "$script" | grep -q "#!/usr/bin/env nu"; then
+              echo "Warning: $script missing shebang"
+            fi
+          done
+
+      - name: Check script documentation
+        run: |
+          echo "Checking script documentation..."
+
+          # Scripts should have description comments
+          for script in scripts/nu/examples/*.nu scripts/nu/modules/*.nu; do
+            if ! head -n 5 "$script" | grep -q "#"; then
+              echo "Warning: $script may be missing documentation"
+            fi
+          done
