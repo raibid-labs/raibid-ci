@@ -33,18 +33,30 @@ fn main() -> Result<()> {
             // Launch TUI dashboard
             raibid_tui::launch()
         }
+        Some(cli::Commands::Init(cmd)) => {
+            // Handle init command
+            commands::init::execute(&cmd.command)
+        }
+        Some(cli::Commands::Health(cmd)) => {
+            // Handle health command
+            commands::health::execute(cmd.component, cmd.json)
+        }
+        Some(cli::Commands::Destroy(cmd)) => {
+            // Handle destroy command
+            commands::destroy::execute(cmd.component, cmd.yes, cmd.dry_run, cmd.force)
+        }
         Some(cli::Commands::Setup { component }) => {
-            // Handle setup command
+            // Handle setup command (deprecated, use init instead)
             let comp = component.parse()?;
             commands::setup::execute(comp)
         }
         Some(cli::Commands::Teardown { component }) => {
-            // Handle teardown command
+            // Handle teardown command (deprecated, use destroy instead)
             let comp = component.parse()?;
             commands::teardown::execute(comp)
         }
         Some(cli::Commands::Status { component }) => {
-            // Handle status command
+            // Handle status command (deprecated, use health instead)
             let comp = match component {
                 Some(c) => Some(c.parse()?),
                 None => None,

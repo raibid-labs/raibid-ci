@@ -30,17 +30,26 @@ pub enum Commands {
     Config(ConfigCommand),
     /// Launch the TUI dashboard for monitoring and management
     Tui,
-    /// Setup infrastructure component
+    /// Initialize infrastructure components
+    Init(InitCommand),
+    /// Check infrastructure health
+    Health(HealthCommand),
+    /// Destroy infrastructure components
+    Destroy(DestroyCommand),
+    /// Setup infrastructure component (deprecated, use 'init' instead)
+    #[command(hide = true)]
     Setup {
         /// Component to setup (k3s, gitea, redis, keda, flux, all)
         component: String,
     },
-    /// Teardown infrastructure component
+    /// Teardown infrastructure component (deprecated, use 'destroy' instead)
+    #[command(hide = true)]
     Teardown {
         /// Component to teardown (k3s, gitea, redis, keda, flux, all)
         component: String,
     },
-    /// Show status of infrastructure component
+    /// Show status of infrastructure component (deprecated, use 'health' instead)
+    #[command(hide = true)]
     Status {
         /// Component to show status for (k3s, gitea, redis, keda, flux, all)
         component: Option<String>,
@@ -97,6 +106,139 @@ pub enum ConfigSubcommand {
 
     /// Show configuration file path
     Path,
+}
+
+/// Init infrastructure commands
+#[derive(Args, Debug)]
+pub struct InitCommand {
+    #[command(subcommand)]
+    pub command: InitSubcommand,
+}
+
+/// Init subcommands
+#[derive(Subcommand, Debug)]
+pub enum InitSubcommand {
+    /// Initialize k3s Kubernetes cluster
+    K3s {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+
+        /// Specific k3s version to install
+        #[arg(long)]
+        version: Option<String>,
+
+        /// Install in rootless mode
+        #[arg(long)]
+        rootless: bool,
+    },
+
+    /// Initialize Gitea Git server with OCI registry
+    Gitea {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+
+        /// Service type (NodePort, LoadBalancer, ClusterIP)
+        #[arg(long, default_value = "NodePort")]
+        service_type: String,
+
+        /// Admin username
+        #[arg(long, default_value = "raibid-admin")]
+        admin_user: String,
+    },
+
+    /// Initialize Redis with Streams for job queue
+    Redis {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+
+        /// Enable persistence
+        #[arg(long, default_value = "true")]
+        persistence: bool,
+    },
+
+    /// Initialize Flux GitOps
+    Flux {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+
+        /// Path to GitOps repository
+        #[arg(long)]
+        repo_path: Option<String>,
+    },
+
+    /// Initialize KEDA autoscaler
+    Keda {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+    },
+
+    /// Initialize all components
+    All {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip pre-flight checks
+        #[arg(long)]
+        skip_checks: bool,
+    },
+}
+
+/// Health check commands
+#[derive(Args, Debug)]
+pub struct HealthCommand {
+    /// Component to check (k3s, gitea, redis, keda, flux, all)
+    #[arg(value_name = "COMPONENT")]
+    pub component: Option<String>,
+
+    /// Output as JSON
+    #[arg(long)]
+    pub json: bool,
+}
+
+/// Destroy infrastructure commands
+#[derive(Args, Debug)]
+pub struct DestroyCommand {
+    /// Component to destroy (k3s, gitea, redis, keda, flux, all)
+    #[arg(value_name = "COMPONENT")]
+    pub component: String,
+
+    /// Skip confirmation prompts
+    #[arg(short, long)]
+    pub yes: bool,
+
+    /// Show what would be done without making changes
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Force destroy even if there are dependents
+    #[arg(long)]
+    pub force: bool,
 }
 
 /// Jobs management commands

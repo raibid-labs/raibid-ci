@@ -263,7 +263,7 @@ fn print_health_table(statuses: &[ComponentStatus]) {
         let issues_cell = if issues.is_empty() {
             Cell::new("None").fg(Color::Green)
         } else {
-            Cell::new(&issues.join(", ")).fg(Color::Yellow)
+            Cell::new(issues.join(", ")).fg(Color::Yellow)
         };
         row.add_cell(issues_cell);
 
@@ -352,11 +352,11 @@ fn print_detailed_health(status: &ComponentStatus) -> Result<()> {
             row.add_cell(ready_cell);
 
             let restart_cell = if pod.restarts == 0 {
-                Cell::new(&pod.restarts.to_string())
+                Cell::new(pod.restarts.to_string())
             } else if pod.restarts < 5 {
-                Cell::new(&pod.restarts.to_string()).fg(Color::Yellow)
+                Cell::new(pod.restarts.to_string()).fg(Color::Yellow)
             } else {
-                Cell::new(&pod.restarts.to_string()).fg(Color::Red)
+                Cell::new(pod.restarts.to_string()).fg(Color::Red)
             };
             row.add_cell(restart_cell);
 

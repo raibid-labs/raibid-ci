@@ -317,7 +317,12 @@ async fn read_log_entries(
     start_id: &str,
 ) -> Result<(Vec<serde_json::Value>, u64), redis::RedisError> {
     // XREAD COUNT 100 STREAMS stream_key start_id
-    let result: Vec<Vec<Vec<(String, Vec<(String, Vec<(String, String)>)>)>>> = redis::cmd("XREAD")
+    // Type alias for complex Redis stream response
+    type StreamEntry = (String, Vec<(String, String)>);
+    type StreamMessages = Vec<(String, Vec<StreamEntry>)>;
+    type StreamResponse = Vec<Vec<StreamMessages>>;
+
+    let result: StreamResponse = redis::cmd("XREAD")
         .arg("COUNT")
         .arg(100)
         .arg("STREAMS")

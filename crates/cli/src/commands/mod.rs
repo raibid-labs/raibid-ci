@@ -4,6 +4,9 @@
 //! Each command is implemented as a separate module.
 
 pub mod config;
+pub mod destroy;
+pub mod health;
+pub mod init;
 pub mod jobs;
 pub mod setup;
 pub mod status;
