@@ -1,0 +1,34 @@
+# raibid-ci configuration for test fixture
+version: 1
+
+# Build configuration
+build:
+  type: rust
+  commands:
+    - cargo build --release
+    - cargo test --release
+
+# Cache configuration
+cache:
+  paths:
+    - target/
+    - ~/.cargo/registry/
+    - ~/.cargo/git/
+
+# Docker configuration
+docker:
+  enabled: true
+  dockerfile: Dockerfile
+  tags:
+    - latest
+    - ${COMMIT_SHA}
+
+# Test configuration
+test:
+  enabled: true
+  commands:
+    - cargo test --all-features
+
+# Notifications (optional)
+notifications:
+  enabled: false

@@ -131,6 +131,42 @@ test-name NAME:
 test-coverage:
     cargo tarpaulin --workspace --out Html --output-dir coverage
 
+# Run E2E tests (requires external services)
+test-e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running E2E tests (requires external services)..."
+    TEST_EXTERNAL=1 cargo test --test ci_pipeline_test -- --ignored --nocapture
+
+# Run E2E tests and cleanup
+test-e2e-clean: test-e2e
+    ./tests/e2e/cleanup.sh
+
+# Run performance tests
+test-performance:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running performance tests..."
+    TEST_EXTERNAL=1 cargo test --test performance_test -- --ignored --nocapture
+
+# Run cache tests
+test-cache:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running cache tests..."
+    TEST_EXTERNAL=1 cargo test --test cache_test -- --ignored --nocapture
+
+# Run failure recovery tests
+test-failure:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running failure recovery tests..."
+    TEST_EXTERNAL=1 cargo test --test failure_test -- --ignored --nocapture
+
+# Run all external tests (E2E, performance, cache, failure)
+test-all-external: test-e2e test-performance test-cache test-failure
+    @echo "All external tests completed!"
+
 # === Check Commands ===
 
 # Run cargo check on workspace
