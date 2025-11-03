@@ -48,6 +48,10 @@ postgresql:
     password: gitea  # Change in production
     database: gitea
 
+## PostgreSQL HA (disabled - using single instance postgres)
+postgresql-ha:
+  enabled: false
+
 ## Redis cache
 redis:
   enabled: true
