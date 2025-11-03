@@ -1,0 +1,81 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+**/debug/
+**/*.pdb
+
+# Cargo registry and cache
+.cargo/registry/
+.cargo/git/
+
+# Test and benchmark outputs
+**/mutants.out/
+**/*.profdata
+**/*.profraw
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Documentation
+*.md
+!README.md
+docs/
+examples/
+
+# Test files
+tests/
+benches/
+
+# Docker files (don't need these inside the image)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Lock files (Cargo.lock should be included for reproducible builds)
+# Cargo.lock
+
+# Local configuration
+.env
+.env.*
+*.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# Coverage reports
+coverage/
+*.lcov
+tarpaulin-report.html
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini

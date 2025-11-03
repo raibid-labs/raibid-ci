@@ -1,0 +1,155 @@
+name: Agent Container Build
+
+on:
+  push:
+    branches:
+      - main
+      - 'ws-05-*'
+    paths:
+      - 'crates/agent/Dockerfile'
+      - 'crates/agent/build.sh'
+      - 'crates/agent/test.sh'
+      - 'crates/agent/healthcheck.sh'
+      - '.github/workflows/agent-container.yml'
+  pull_request:
+    paths:
+      - 'crates/agent/Dockerfile'
+      - 'crates/agent/build.sh'
+      - 'crates/agent/test.sh'
+      - 'crates/agent/healthcheck.sh'
+      - '.github/workflows/agent-container.yml'
+
+env:
+  IMAGE_NAME: raibid-ci-agent
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  build-and-test:
+    name: Build and Test Agent Container
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build container image
+        working-directory: crates/agent
+        run: |
+          ./build.sh \
+            --name ${{ env.IMAGE_NAME }} \
+            --tag ${{ github.sha }} \
+            --registry ${{ env.REGISTRY }} \
+            --platform linux/amd64
+
+      - name: Run health check
+        working-directory: crates/agent
+        run: |
+          docker run --rm \
+            --platform linux/amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            /usr/local/bin/healthcheck.sh
+
+      - name: Run test suite
+        working-directory: crates/agent
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          REGISTRY: ${{ env.REGISTRY }}
+          PLATFORM: linux/amd64
+        run: ./test.sh
+
+      - name: Check image size
+        run: |
+          SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --format='{{.Size}}' | awk '{print $1/1024/1024}')
+          echo "Image size: ${SIZE} MB"
+          if (( $(echo "$SIZE > 1536" | bc -l) )); then
+            echo "::warning::Image size ${SIZE} MB exceeds 1536 MB target"
+          else
+            echo "::notice::Image size ${SIZE} MB is within 1536 MB target"
+          fi
+
+      - name: Display tool versions
+        run: |
+          echo "=== Tool Versions ==="
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} rustc --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} cargo --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} docker --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} git --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} cargo-nextest --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} cargo-audit --version
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} cargo-deny --version
+
+      - name: Push to GitHub Container Registry
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  build-arm64:
+    name: Build ARM64 Image (DGX Spark)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build-and-test
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ARM64 image
+        working-directory: crates/agent
+        run: |
+          ./build.sh \
+            --name ${{ env.IMAGE_NAME }} \
+            --tag ${{ github.sha }}-arm64 \
+            --registry ${{ env.REGISTRY }} \
+            --platform linux/arm64 \
+            --push
+
+      - name: Tag as latest-arm64
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-arm64
