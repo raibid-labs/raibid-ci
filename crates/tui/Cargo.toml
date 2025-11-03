@@ -31,6 +31,10 @@ colored = { workspace = true }
 # Async runtime
 tokio = { workspace = true }
 
+# HTTP client
+reqwest = { workspace = true }
+urlencoding = { workspace = true }
+
 # Utilities
 rand = { workspace = true }
 chrono = { workspace = true }

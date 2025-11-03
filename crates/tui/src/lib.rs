@@ -3,12 +3,15 @@
 //! This module provides a rich terminal-based dashboard for monitoring
 //! and managing CI/CD jobs, agents, and queue metrics.
 
+mod api_client;
 mod app;
 mod events;
 mod mock_data;
 mod terminal;
 mod ui;
 
+#[allow(unused_imports)]
+pub use api_client::{ApiClient, ApiConfig};
 #[allow(unused_imports)]
 pub use app::{App, AppConfig, InputMode, Tab};
 #[allow(unused_imports)]
