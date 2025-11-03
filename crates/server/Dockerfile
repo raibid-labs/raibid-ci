@@ -64,7 +64,7 @@ COPY --from=builder /app/target/release/raibid-server /usr/local/bin/raibid-serv
 RUN chmod +x /usr/local/bin/raibid-server
 
 # Copy healthcheck script
-COPY --chown=server:server healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY --chown=server:server crates/server/healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
 # Set working directory

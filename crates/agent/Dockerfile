@@ -118,7 +118,7 @@ WORKDIR /workspace
 RUN chown agent:agent /workspace
 
 # Copy health check script
-COPY --chown=agent:agent healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY --chown=agent:agent crates/agent/healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
 # Switch to non-root user

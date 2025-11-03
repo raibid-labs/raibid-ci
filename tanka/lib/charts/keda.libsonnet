@@ -13,7 +13,7 @@ local k = import '../k.libsonnet';
   //   namespace: Kubernetes namespace
   //   name: Release name (default: 'keda')
   //   values: Additional Helm values to merge
-  new(namespace, name='keda', values={}):: {
+  new(namespace, name='keda', values={})::
     local defaultValues = {
       // Operator configuration
       operator: {
@@ -76,22 +76,18 @@ local k = import '../k.libsonnet';
           },
         },
       },
-    },
+    };
 
     // Merge default values with user-provided values
-    local mergedValues = defaultValues + values,
+    local mergedValues = defaultValues + values;
 
-    // Render the Helm chart
-    local chart = helm.template(name, '../../vendor/keda', {
+    // Render and return the Helm chart
+    helm.template(name, '../../vendor/keda', {
       namespace: namespace,
       values: mergedValues,
       kubeVersion: '1.29',
       includeCrds: true,
-    });
-
-    // Return rendered resources
-    chart
-  },
+    }),
 
   // Helper functions for KEDA CRDs
   crds:: {

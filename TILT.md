@@ -11,6 +11,89 @@ Tilt orchestrates the entire raibid-ci development stack:
 - **Port Forwards**: Access services locally
 - **Live Reload**: Automatic rebuilds on code changes
 
+## Getting Started
+
+### One-Time Setup
+
+**1. Install Prerequisites:**
+```bash
+# Tilt (Linux/macOS)
+curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
+
+# Or via Homebrew
+brew install tilt
+
+# Helm (for Tanka chart vendoring)
+brew install helm
+
+# Verify installations
+tilt version    # Should show v0.35.x or later
+helm version    # Should show v3.x
+kubectl version # Should connect to cluster
+```
+
+**2. Set Up k3s Cluster:**
+```bash
+# Option A: Native k3s (recommended for DGX Spark)
+cd infra/k3s
+sudo ./install.sh
+
+# Option B: k3d (Docker-based k3s, easier for dev)
+k3d cluster create raibid-ci
+
+# Verify cluster is running
+kubectl cluster-info
+kubectl get nodes
+```
+
+**3. Vendor Helm Charts for Tanka:**
+```bash
+# IMPORTANT: Must be done before first `tilt up`
+cd tanka
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add gitea-charts https://dl.gitea.io/charts/
+helm repo add kedacore https://kedacore.github.io/charts
+helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
+helm repo update
+helm pull bitnami/redis --version 18.19.4 --untar -d vendor/
+helm pull gitea-charts/gitea --version 10.1.4 --untar -d vendor/
+helm pull kedacore/keda --version 2.14.0 --untar -d vendor/
+helm pull fluxcd-community/flux2 --version 2.12.4 --untar -d vendor/
+
+# Or use justfile command from project root:
+cd ..
+just tk-vendor
+```
+
+**4. Verify Setup:**
+```bash
+# From project root, verify Tanka works
+cd tanka
+tk show environments/local | head -20
+
+# Should see Kubernetes YAML output with no errors
+```
+
+### Daily Development
+
+**Start Development Environment:**
+```bash
+# From project root
+tilt up
+```
+
+**Access Services:**
+- Tilt UI: http://localhost:10350
+- Server API: http://localhost:8080
+- Server Metrics: http://localhost:8081/metrics
+- Gitea: http://localhost:3000
+
+**Stop Development Environment:**
+```bash
+# From Tilt UI, press 'q' or run:
+tilt down
+```
+
 ## Prerequisites
 
 ### Required Tools
@@ -588,6 +671,162 @@ k3d cluster delete raibid-ci
 # Complete k3s removal
 sudo /usr/local/bin/k3s-uninstall.sh
 ```
+
+## Troubleshooting
+
+### Error: "No such file or directory" when running Tanka
+
+**Symptom:**
+```
+Error: evaluating jsonnet: RUNTIME ERROR: ...vendor/redis: no such file or directory
+```
+
+**Cause**: Helm charts not vendored to `tanka/vendor/`.
+
+**Solution**:
+```bash
+cd tanka
+just tk-vendor  # From project root
+# Or manually run helm pull commands (see Getting Started)
+```
+
+### Error: "Cargo feature edition2024 is required"
+
+**Symptom**:
+```
+The package requires the Cargo feature called `edition2024`, but that feature is
+not stabilized in this version of Cargo (1.82.0)
+```
+
+**Cause**: A dependency requires Rust edition 2024, but Dockerfile uses Cargo 1.82.
+
+**Status**: Known issue being tracked.
+
+**Workaround**:
+- Update dependencies to use edition 2021, or
+- Wait for Rust 1.83+ with edition 2024 support
+
+**Impact**: Docker builds fail, but Tanka YAML generation works.
+
+### Error: kubectl cannot connect to cluster
+
+**Symptom**:
+```
+Error: k3s cluster validation failed
+```
+
+**Cause**: k3s not running or kubectl not configured.
+
+**Solution**:
+```bash
+# Check if k3s is running
+sudo systemctl status k3s
+
+# Ensure kubectl config is correct
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+kubectl cluster-info
+
+# Or for k3d
+k3d cluster list
+k3d cluster start raibid-ci
+```
+
+### Error: "port already in use"
+
+**Symptom**:
+```
+Error: listen tcp :8080: bind: address already in use
+```
+
+**Cause**: Another process using the port.
+
+**Solution**:
+```bash
+# Find process using port 8080
+lsof -i :8080
+# Or: sudo netstat -tulpn | grep :8080
+
+# Kill process or change port in Tiltfile
+```
+
+### Tilt is slow to rebuild
+
+**Cause**: Docker layer caching not working optimally.
+
+**Solutions**:
+1. **Check Docker storage**:
+   ```bash
+   docker system df
+   docker system prune  # Remove unused images/containers
+   ```
+
+2. **Rebuild from scratch**:
+   ```bash
+   tilt down
+   docker rmi raibid-server:latest raibid-agent:latest
+   tilt up
+   ```
+
+3. **Check cargo-chef layers**:
+   - First build is always slow (10-15 minutes)
+   - Subsequent builds should be 1-3 minutes
+   - If always slow, check Dockerfile caching
+
+### Pods stuck in "ImagePullBackOff"
+
+**Cause**: Image not available in k3s image store.
+
+**Solution**:
+```bash
+# Check image exists locally
+docker images | grep raibid
+
+# For k3s, import image manually
+docker save raibid-server:latest | sudo k3s ctr images import -
+
+# For k3d, load image
+k3d image load raibid-server:latest -c raibid-ci
+```
+
+### No logs appearing in Tilt UI
+
+**Cause**: Pod may not be running or have no logs yet.
+
+**Solutions**:
+```bash
+# Check pod status
+kubectl get pods -n raibid-system
+
+# View logs directly
+kubectl logs -l app=raibid-server -n raibid-system --tail=50
+
+# Describe pod for events
+kubectl describe pod -l app=raibid-server -n raibid-system
+```
+
+## Known Limitations
+
+1. **Docker Build Performance**: First build takes 10-15 minutes due to Rust compilation.
+   Subsequent builds are faster (1-3 minutes) thanks to cargo-chef caching.
+
+2. **No Hot Reload**: Rust code changes require full image rebuild and pod restart.
+   This is expected - hot reload is not currently configured (Issue #106 skipped).
+
+3. **k3s Required**: Full testing requires k3s. Tanka YAML generation works without k3s.
+
+4. **Edition 2024**: Docker builds currently fail due to Rust edition 2024 dependency.
+   Tanka/Kubernetes deployment still works with pre-built images.
+
+## Testing Status
+
+The Tilt + Tanka setup has been validated:
+- ✅ Tanka generates 90 Kubernetes resources (23,485 lines of YAML)
+- ✅ Helm chart vendoring works correctly
+- ✅ Jsonnet syntax validated
+- ⚠️  Docker builds pending Rust dependency fix
+- ⚠️  Full k3s integration testing pending
+
+See [TESTING_REPORT.md](TESTING_REPORT.md) for detailed results.
 
 ## References
 

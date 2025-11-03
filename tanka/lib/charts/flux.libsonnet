@@ -12,7 +12,7 @@ local config = import '../raibid/config.libsonnet';
   //   namespace: Kubernetes namespace
   //   name: Release name (default: 'flux')
   //   values: Additional Helm values to merge
-  new(namespace, name='flux', values={}):: {
+  new(namespace, name='flux', values={})::
     local defaultValues = {
       // Source controller - handles Git repositories
       sourceController: {
@@ -53,22 +53,18 @@ local config = import '../raibid/config.libsonnet';
       rbac: {
         create: true,
       },
-    },
+    };
 
     // Merge default values with user-provided values
-    local mergedValues = defaultValues + values,
+    local mergedValues = defaultValues + values;
 
-    // Render the Helm chart
-    local chart = helm.template(name, '../../vendor/flux2', {
+    // Render and return the Helm chart
+    helm.template(name, '../../vendor/flux2', {
       namespace: namespace,
       values: mergedValues,
       kubeVersion: '1.29',
       includeCrds: true,
-    });
-
-    // Return rendered resources
-    chart
-  },
+    }),
 
   // Helper functions for Flux CRDs
   crds:: {

@@ -247,8 +247,8 @@ local k = import 'k.libsonnet';
   // Conditional helpers
   when:: {
     // Only include field if condition is true
-    // Usage: when.true(enabled, 'field', value)
-    true(condition, field, value):: if condition then { [field]: value } else {},
+    // Usage: when.isTrue(enabled, 'field', value)
+    isTrue(condition, field, value):: if condition then { [field]: value } else {},
 
     // Only include field if value is not null
     // Usage: when.notNull('field', maybeValue)

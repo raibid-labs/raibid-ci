@@ -12,7 +12,7 @@ local config = import '../raibid/config.libsonnet';
   //   namespace: Kubernetes namespace
   //   name: Release name (default: 'redis')
   //   values: Additional Helm values to merge
-  new(namespace, name='redis', values={}):: {
+  new(namespace, name='redis', values={})::
     local defaultValues = {
       // Architecture: standalone for MVP (can upgrade to replication later)
       architecture: 'standalone',
@@ -100,25 +100,16 @@ local config = import '../raibid/config.libsonnet';
       networkPolicy: {
         enabled: false,
       },
-
-      // Common labels
-      commonLabels: config.labels.forComponent('redis') + {
-        'app.kubernetes.io/managed-by': 'helm',
-      },
-    },
+    };
 
     // Merge default values with user-provided values
-    local mergedValues = defaultValues + values,
+    local mergedValues = defaultValues + values;
 
-    // Render the Helm chart
-    local chart = helm.template(name, '../../vendor/redis', {
+    // Render and return the Helm chart
+    helm.template(name, '../../vendor/redis', {
       namespace: namespace,
       values: mergedValues,
       kubeVersion: '1.29',
       includeCrds: true,
-    });
-
-    // Return rendered resources
-    chart
-  },
+    }),
 }

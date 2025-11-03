@@ -1,0 +1,5 @@
+# Vendored Helm charts (downloaded via helm pull)
+vendor/redis/
+vendor/gitea/
+vendor/keda/
+vendor/flux2/

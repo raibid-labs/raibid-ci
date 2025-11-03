@@ -1,0 +1,136 @@
+name: Validate Tanka Configuration
+
+on:
+  pull_request:
+    paths:
+      - 'tanka/**/*.jsonnet'
+      - 'tanka/**/*.libsonnet'
+      - 'tanka/jsonnetfile.json'
+      - 'tanka/jsonnetfile.lock.json'
+      - '.github/workflows/tanka-validate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tanka/**/*.jsonnet'
+      - 'tanka/**/*.libsonnet'
+      - 'tanka/jsonnetfile.json'
+      - 'tanka/jsonnetfile.lock.json'
+
+jobs:
+  validate:
+    name: Validate Tanka Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Tanka
+        run: |
+          curl -fsSL https://github.com/grafana/tanka/releases/download/v0.35.0/tanka-linux-amd64 -o /tmp/tk
+          chmod +x /tmp/tk
+          sudo mv /tmp/tk /usr/local/bin/tk
+          tk --version
+
+      - name: Install jsonnet-bundler
+        run: |
+          curl -fsSL https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/v0.6.0/jb-linux-amd64 -o /tmp/jb
+          chmod +x /tmp/jb
+          sudo mv /tmp/jb /usr/local/bin/jb
+          jb --version
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.14.0'
+
+      - name: Install jsonnet dependencies
+        working-directory: tanka
+        run: jb install
+
+      - name: Add Helm repositories
+        working-directory: tanka
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add gitea-charts https://dl.gitea.io/charts/
+          helm repo add kedacore https://kedacore.github.io/charts
+          helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
+          helm repo update
+
+      - name: Vendor Helm charts
+        working-directory: tanka
+        run: |
+          echo "Vendoring Helm charts..."
+          helm pull bitnami/redis --version 18.19.4 --untar -d vendor/
+          helm pull gitea-charts/gitea --version 10.1.4 --untar -d vendor/
+          helm pull kedacore/keda --version 2.14.0 --untar -d vendor/
+          helm pull fluxcd-community/flux2 --version 2.12.4 --untar -d vendor/
+          echo "✓ Charts vendored"
+          ls -la vendor/
+
+      - name: Validate jsonnet syntax
+        working-directory: tanka
+        run: |
+          echo "Validating jsonnet syntax..."
+          tk fmt --test
+          echo "✓ Jsonnet syntax is valid"
+
+      - name: Generate Kubernetes manifests
+        working-directory: tanka
+        run: |
+          echo "Generating Kubernetes manifests..."
+          tk show environments/local --dangerous-allow-redirect > /tmp/tanka-output.yaml
+          echo "✓ Manifests generated successfully"
+
+      - name: Check resource count
+        working-directory: tanka
+        run: |
+          RESOURCES=$(tk show environments/local --dangerous-allow-redirect 2>/dev/null | grep -c "^kind:" || true)
+          echo "Generated $RESOURCES Kubernetes resources"
+
+          # Expect at least 80 resources (we generated 90 in testing)
+          if [ "$RESOURCES" -lt 80 ]; then
+            echo "❌ Expected at least 80 resources, got $RESOURCES"
+            exit 1
+          fi
+
+          echo "✓ Resource count validated ($RESOURCES resources)"
+
+      - name: Verify critical resources
+        working-directory: tanka
+        run: |
+          echo "Verifying critical resources exist..."
+          OUTPUT=$(tk show environments/local --dangerous-allow-redirect 2>/dev/null)
+
+          # Check for key resource types
+          echo "$OUTPUT" | grep -q "kind: ScaledJob" || (echo "❌ Missing ScaledJob (raibid-agent)" && exit 1)
+          echo "✓ Found ScaledJob (raibid-agent)"
+
+          echo "$OUTPUT" | grep -q "kind: StatefulSet" || (echo "❌ Missing StatefulSet (Redis)" && exit 1)
+          echo "✓ Found StatefulSet (Redis)"
+
+          echo "$OUTPUT" | grep -q "kind: Deployment" || (echo "❌ Missing Deployment" && exit 1)
+          echo "✓ Found Deployment"
+
+          echo "$OUTPUT" | grep -q "kind: CustomResourceDefinition" || (echo "❌ Missing CRDs" && exit 1)
+          echo "✓ Found CustomResourceDefinitions"
+
+          echo "$OUTPUT" | grep -q "kind: GitRepository" || (echo "❌ Missing GitRepository (Flux)" && exit 1)
+          echo "✓ Found GitRepository (Flux)"
+
+          echo "✅ All critical resources validated"
+
+      - name: Show resource breakdown
+        if: always()
+        working-directory: tanka
+        run: |
+          echo "=== Resource Breakdown ==="
+          tk show environments/local --dangerous-allow-redirect 2>/dev/null | grep "^kind:" | sort | uniq -c | sort -rn || true
+
+      - name: Upload generated manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tanka-manifests
+          path: /tmp/tanka-output.yaml
+          retention-days: 30

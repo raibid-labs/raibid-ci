@@ -13,7 +13,7 @@ local config = import '../raibid/config.libsonnet';
   //   name: Release name (default: 'gitea')
   //   domain: Gitea domain (default: 'gitea.local')
   //   values: Additional Helm values to merge
-  new(namespace, name='gitea', domain='gitea.local', values={}):: {
+  new(namespace, name='gitea', domain='gitea.local', values={})::
     local defaultValues = {
       // Gitea image configuration
       image: {
@@ -191,25 +191,16 @@ local config = import '../raibid/config.libsonnet';
         successThreshold: 1,
         failureThreshold: 3,
       },
-
-      // Common labels
-      commonLabels: config.labels.forComponent('gitea') + {
-        'app.kubernetes.io/managed-by': 'helm',
-      },
-    },
+    };
 
     // Merge default values with user-provided values
-    local mergedValues = defaultValues + values,
+    local mergedValues = defaultValues + values;
 
-    // Render the Helm chart
-    local chart = helm.template(name, '../../vendor/gitea', {
+    // Render and return the Helm chart
+    helm.template(name, '../../vendor/gitea', {
       namespace: namespace,
       values: mergedValues,
       kubeVersion: '1.29',
       includeCrds: true,
-    });
-
-    // Return rendered resources
-    chart
-  },
+    }),
 }
