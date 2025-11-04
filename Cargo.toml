@@ -41,7 +41,8 @@ crossterm = "0.27"
 
 # Terminal utilities
 colored = "2"
-comfy-table = "7"
+# Pin comfy-table to <7.2 to avoid edition2024 requirement
+comfy-table = ">=7.0, <7.2"
 dialoguer = "0.11"
 
 # Time and date
