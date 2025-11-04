@@ -3,6 +3,8 @@
 //! Note: Tests that require Redis will be skipped if Redis is not available.
 //! To run all tests, ensure Redis is running on localhost:6379.
 
+mod common;
+
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -51,6 +53,7 @@ fn generate_github_signature(payload: &str, secret: &str) -> String {
 
 #[tokio::test]
 async fn test_gitea_webhook_without_signature() {
+    common::init_test_tracing();
     if !is_redis_available().await {
         eprintln!("Skipping test: Redis not available");
         return;
@@ -103,6 +106,7 @@ async fn test_gitea_webhook_without_signature() {
 
 #[tokio::test]
 async fn test_gitea_webhook_with_valid_signature() {
+    common::init_test_tracing();
     if !is_redis_available().await {
         eprintln!("Skipping test: Redis not available");
         return;
@@ -158,6 +162,7 @@ async fn test_gitea_webhook_with_valid_signature() {
 
 #[tokio::test]
 async fn test_gitea_webhook_with_invalid_signature() {
+    common::init_test_tracing();
     let secret = "test-secret";
     let state = create_test_state(Some(secret.to_string()), None);
     let app = raibid_server::routes::webhooks::routes().with_state(std::sync::Arc::new(state));
@@ -195,6 +200,7 @@ async fn test_gitea_webhook_with_invalid_signature() {
 
 #[tokio::test]
 async fn test_gitea_webhook_missing_signature_when_required() {
+    common::init_test_tracing();
     let secret = "test-secret";
     let state = create_test_state(Some(secret.to_string()), None);
     let app = raibid_server::routes::webhooks::routes().with_state(std::sync::Arc::new(state));
@@ -231,6 +237,7 @@ async fn test_gitea_webhook_missing_signature_when_required() {
 
 #[tokio::test]
 async fn test_github_webhook_without_signature() {
+    common::init_test_tracing();
     if !is_redis_available().await {
         eprintln!("Skipping test: Redis not available");
         return;
@@ -280,6 +287,7 @@ async fn test_github_webhook_without_signature() {
 
 #[tokio::test]
 async fn test_github_webhook_with_valid_signature() {
+    common::init_test_tracing();
     if !is_redis_available().await {
         eprintln!("Skipping test: Redis not available");
         return;
@@ -333,6 +341,7 @@ async fn test_github_webhook_with_valid_signature() {
 
 #[tokio::test]
 async fn test_github_webhook_with_invalid_signature() {
+    common::init_test_tracing();
     let secret = "test-github-secret";
     let state = create_test_state(None, Some(secret.to_string()));
     let app = raibid_server::routes::webhooks::routes().with_state(std::sync::Arc::new(state));
@@ -370,6 +379,7 @@ async fn test_github_webhook_with_invalid_signature() {
 
 #[tokio::test]
 async fn test_invalid_json_payload() {
+    common::init_test_tracing();
     let state = create_test_state(None, None);
     let app = raibid_server::routes::webhooks::routes().with_state(std::sync::Arc::new(state));
 

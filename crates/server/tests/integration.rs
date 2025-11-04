@@ -1,11 +1,14 @@
 //! Integration tests for raibid-server
 
+mod common;
+
 use raibid_server::{Server, ServerConfig};
 use std::time::Duration;
 use tokio::time::sleep;
 
 #[tokio::test]
 async fn test_server_starts_and_responds() {
+    common::init_test_tracing();
     let config = ServerConfig {
         host: "127.0.0.1".to_string(),
         port: 18080,
@@ -38,6 +41,7 @@ async fn test_server_starts_and_responds() {
 
 #[tokio::test]
 async fn test_health_endpoints_return_json() {
+    common::init_test_tracing();
     let config = ServerConfig {
         host: "127.0.0.1".to_string(),
         port: 18081,
@@ -93,6 +97,7 @@ async fn test_health_endpoints_return_json() {
 
 #[tokio::test]
 async fn test_request_id_header() {
+    common::init_test_tracing();
     let config = ServerConfig {
         host: "127.0.0.1".to_string(),
         port: 18082,

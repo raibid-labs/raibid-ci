@@ -1,5 +1,7 @@
 //! Integration tests for job API endpoints
 
+mod common;
+
 use raibid_server::{AppState, Server, ServerConfig};
 use std::time::Duration;
 use tokio::time::sleep;
@@ -37,6 +39,7 @@ async fn start_test_server(
 
 #[tokio::test]
 async fn test_list_jobs_endpoint_exists() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18090, "redis://127.0.0.1:6379").await;
 
     let response = reqwest::get(format!("http://{}:{}/jobs", config.host, config.port))
@@ -52,6 +55,7 @@ async fn test_list_jobs_endpoint_exists() {
 
 #[tokio::test]
 async fn test_get_job_by_id_endpoint_exists() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18091, "redis://127.0.0.1:6379").await;
 
     let response = reqwest::get(format!(
@@ -69,6 +73,7 @@ async fn test_get_job_by_id_endpoint_exists() {
 
 #[tokio::test]
 async fn test_job_logs_endpoint_exists() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18092, "redis://127.0.0.1:6379").await;
 
     let client = reqwest::Client::new();
@@ -89,6 +94,7 @@ async fn test_job_logs_endpoint_exists() {
 
 #[tokio::test]
 async fn test_list_jobs_with_filters() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18093, "redis://127.0.0.1:6379").await;
 
     let client = reqwest::Client::new();
@@ -107,6 +113,7 @@ async fn test_list_jobs_with_filters() {
 
 #[tokio::test]
 async fn test_list_jobs_with_invalid_status() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18094, "redis://127.0.0.1:6379").await;
 
     let client = reqwest::Client::new();
@@ -130,6 +137,7 @@ async fn test_list_jobs_with_invalid_status() {
 
 #[tokio::test]
 async fn test_list_jobs_pagination() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18095, "redis://127.0.0.1:6379").await;
 
     let client = reqwest::Client::new();
@@ -157,6 +165,7 @@ async fn test_list_jobs_pagination() {
 
 #[tokio::test]
 async fn test_job_endpoints_return_json() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18096, "redis://127.0.0.1:6379").await;
 
     let client = reqwest::Client::new();
@@ -182,6 +191,7 @@ async fn test_job_endpoints_return_json() {
 
 #[tokio::test]
 async fn test_concurrent_job_requests() {
+    common::init_test_tracing();
     let (handle, config) = start_test_server(18097, "redis://127.0.0.1:6379").await;
 
     // Simulate multiple concurrent TUI clients
