@@ -29,7 +29,7 @@ DOCKER_BUILD_CONTEXT = '.'
 def check_command(cmd):
     """Check if a command exists in PATH"""
     result = local('command -v {} > /dev/null 2>&1 || echo "missing"'.format(cmd), quiet=True, echo_off=True)
-    return result != "missing"
+    return str(result).strip() != "missing"
 
 def is_k3s_running():
     """Check if k3s is running and healthy"""
@@ -39,19 +39,19 @@ def is_k3s_running():
 
     # Try to connect to cluster
     result = local('kubectl cluster-info > /dev/null 2>&1 || echo "not-running"', quiet=True, echo_off=True)
-    return result != "not-running"
+    return str(result).strip() != "not-running"
 
 def get_k3s_context():
     """Get the current kubectl context"""
     if not check_command('kubectl'):
         return None
     result = local('kubectl config current-context 2>/dev/null || echo ""', quiet=True, echo_off=True)
-    return result.strip() if result else None
+    return str(result).strip() if result else None
 
 def namespace_exists(namespace):
     """Check if a namespace exists"""
     result = local('kubectl get namespace {} > /dev/null 2>&1 || echo "missing"'.format(namespace), quiet=True, echo_off=True)
-    return result != "missing"
+    return str(result).strip() != "missing"
 
 def create_namespace(namespace):
     """Create a namespace if it doesn't exist"""
@@ -98,12 +98,12 @@ def ensure_k3s_cluster():
     keda_crd_check = local('kubectl get crd scaledjobs.keda.sh > /dev/null 2>&1 || echo "missing"', quiet=True, echo_off=True)
     flux_crd_check = local('kubectl get crd gitrepositories.source.toolkit.fluxcd.io > /dev/null 2>&1 || echo "missing"', quiet=True, echo_off=True)
 
-    if keda_crd_check == "missing":
+    if str(keda_crd_check).strip() == "missing":
         print('  ⚠ KEDA CRDs not found (will be installed by Helm chart)')
     else:
         print('  ✓ KEDA CRDs found')
 
-    if flux_crd_check == "missing":
+    if str(flux_crd_check).strip() == "missing":
         print('  ⚠ Flux CRDs not found (will be installed by Helm chart)')
     else:
         print('  ✓ Flux CRDs found')
@@ -209,7 +209,7 @@ print('=' * 80)
 
 # Generate Kubernetes manifests from Tanka
 print('Generating manifests from Tanka...')
-tanka_manifests = local('cd {} && tk show {}'.format(TANKA_DIR, TANKA_ENV))
+tanka_manifests = str(local('cd {} && tk show {}'.format(TANKA_DIR, TANKA_ENV)))
 
 # Apply manifests to cluster
 print('Deploying manifests to cluster...')
