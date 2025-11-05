@@ -278,11 +278,14 @@ print('=' * 80)
 
 # Generate Kubernetes manifests from Tanka
 print('Generating manifests from Tanka...')
-tanka_manifests = str(local('cd {} && tk show {} --dangerous-allow-redirect'.format(TANKA_DIR, TANKA_ENV)))
+# Write manifests to a temporary file instead of storing in memory
+# This avoids "file name too long" errors when manifests are large
+manifest_file = '/tmp/raibid-tanka-manifests.yaml'
+local('cd {} && tk show {} --dangerous-allow-redirect > {}'.format(TANKA_DIR, TANKA_ENV, manifest_file))
 
-# Apply manifests to cluster
+# Apply manifests to cluster from file
 print('Deploying manifests to cluster...')
-k8s_yaml(tanka_manifests)
+k8s_yaml(manifest_file)
 
 print('✓ Tanka manifests deployed')
 print('')
@@ -351,8 +354,9 @@ k8s_resource(
 
 # Agent - Auto-scaling build agents (ScaledJob, not Deployment)
 # Note: KEDA ScaledJobs don't create pods until there are jobs
+# ScaledJob must be explicitly specified as it's not a standard workload type
 k8s_resource(
-    workload='raibid-agent',
+    objects=['raibid-agent:scaledjob:raibid-system'],
     new_name='agent',
     labels=['application'],
     # Dependencies: wait for Server, KEDA, and image to be built
