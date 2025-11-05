@@ -1,5 +1,5 @@
 # Tiltfile for raibid-ci Development
-# Orchestrates k3s cluster, Docker builds, and Tanka deployments
+# Orchestrates k3d cluster (k3s in Docker), Docker builds, and Tanka deployments
 # Provides streamlined developer experience for DGX Spark CI development
 
 # =============================================================================
@@ -10,7 +10,10 @@
 PROJECT_NAME = 'raibid-ci'
 NAMESPACE = 'raibid-system'
 
-# k3s configuration
+# k3d cluster configuration
+K3D_CLUSTER_NAME = 'raibid-ci'
+
+# k3s configuration (legacy, kept for reference)
 K3S_CONFIG_DIR = './infra/k3s'
 K3S_INSTALL_SCRIPT = K3S_CONFIG_DIR + '/install.sh'
 K3S_VALIDATE_SCRIPT = K3S_CONFIG_DIR + '/validate-installation.sh'
@@ -60,41 +63,107 @@ def create_namespace(namespace):
         local('kubectl create namespace {}'.format(namespace))
 
 # =============================================================================
-# k3s Cluster Management
+# k3d Cluster Management
 # =============================================================================
 
-def ensure_k3s_cluster():
-    """Ensure k3s cluster is running and configured"""
+def check_k3d_installed():
+    """Check if k3d is installed"""
+    return check_command('k3d')
+
+def get_k3d_clusters():
+    """Get list of k3d clusters"""
+    if not check_k3d_installed():
+        return []
+    result = local('k3d cluster list --no-headers 2>/dev/null || echo ""', quiet=True, echo_off=True)
+    clusters = str(result).strip().split('\n') if result else []
+    return [c.split()[0] for c in clusters if c.strip()]
+
+def k3d_cluster_exists(cluster_name):
+    """Check if a specific k3d cluster exists"""
+    clusters = get_k3d_clusters()
+    return cluster_name in clusters
+
+def k3d_cluster_running(cluster_name):
+    """Check if k3d cluster is running"""
+    if not k3d_cluster_exists(cluster_name):
+        return False
+    # Check if cluster nodes are running
+    result = local('k3d cluster list {} --no-headers 2>/dev/null | grep -q "running" && echo "running" || echo "stopped"'.format(cluster_name), quiet=True, echo_off=True)
+    return str(result).strip() == "running"
+
+def create_k3d_cluster():
+    """Create k3d cluster with raibid-ci configuration"""
+    print('Creating k3d cluster: {}...'.format(K3D_CLUSTER_NAME))
+
+    # Create cluster without port mappings
+    # Port forwarding is handled by Tilt resource definitions
+    # This avoids port conflicts with existing services
+    cmd = [
+        'k3d cluster create {}'.format(K3D_CLUSTER_NAME),
+        '--agents 0',  # No agent nodes (single server for dev)
+        '--wait',  # Wait for cluster to be ready
+        '--timeout 5m',  # Timeout for cluster creation
+    ]
+
+    local(' '.join(cmd))
+    print('✓ k3d cluster created successfully')
+
+def start_k3d_cluster():
+    """Start an existing k3d cluster"""
+    print('Starting k3d cluster: {}...'.format(K3D_CLUSTER_NAME))
+    local('k3d cluster start {}'.format(K3D_CLUSTER_NAME))
+    print('✓ k3d cluster started')
+
+def ensure_k3d_cluster():
+    """Ensure k3d cluster is running and configured"""
 
     print('=' * 80)
-    print('k3s Cluster Setup')
+    print('k3d Cluster Setup')
     print('=' * 80)
 
-    # Check if k3s is already running
-    if is_k3s_running():
-        context = get_k3s_context()
-        print('✓ k3s cluster is already running')
-        print('  Context: {}'.format(context))
+    # Check if k3d is installed
+    if not check_k3d_installed():
+        print('✗ k3d is not installed')
+        print('')
+        print('Please install k3d first:')
+        print('  macOS:   brew install k3d')
+        print('  Linux:   wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash')
+        print('  Windows: choco install k3d')
+        print('')
+        print('Or visit: https://k3d.io/stable/#installation')
+        fail('k3d is not installed')
 
-        # Validate cluster health
-        print('Validating cluster health...')
-        # Check node status
-        local('kubectl get nodes')
-        print('✓ k3s cluster is healthy')
+    print('✓ k3d is installed')
+
+    # Check if cluster exists
+    if not k3d_cluster_exists(K3D_CLUSTER_NAME):
+        print('Cluster "{}" does not exist'.format(K3D_CLUSTER_NAME))
+        create_k3d_cluster()
     else:
-        print('⚠ k3s cluster is not running')
-        print('Please start k3s before running Tilt:')
-        print('  Option 1 (Automated): cd {} && sudo {}'.format(K3S_CONFIG_DIR, K3S_INSTALL_SCRIPT))
-        print('  Option 2 (Manual): sudo systemctl start k3s')
-        print('  Option 3 (k3d): k3d cluster create raibid-ci')
-        fail('k3s cluster is not running. Please start it first.')
+        print('✓ Cluster "{}" exists'.format(K3D_CLUSTER_NAME))
+
+        # Check if cluster is running
+        if not k3d_cluster_running(K3D_CLUSTER_NAME):
+            print('Cluster is stopped')
+            start_k3d_cluster()
+        else:
+            print('✓ Cluster is running')
+
+    # Verify cluster health
+    print('Validating cluster health...')
+    context = get_k3s_context()
+    print('  Context: {}'.format(context))
+
+    # Check node status
+    local('kubectl get nodes')
+    print('✓ Cluster is healthy')
 
     # Ensure required namespace exists
     create_namespace(NAMESPACE)
+    print('✓ Namespace "{}" ready'.format(NAMESPACE))
 
     # Check for required CRDs (KEDA, Flux)
     print('Checking for required CRDs...')
-    # Note: CRDs will be installed by Helm charts, so we just warn if missing
     keda_crd_check = local('kubectl get crd scaledjobs.keda.sh > /dev/null 2>&1 || echo "missing"', quiet=True, echo_off=True)
     flux_crd_check = local('kubectl get crd gitrepositories.source.toolkit.fluxcd.io > /dev/null 2>&1 || echo "missing"', quiet=True, echo_off=True)
 
@@ -108,11 +177,11 @@ def ensure_k3s_cluster():
     else:
         print('  ✓ Flux CRDs found')
 
-    print('✓ k3s cluster setup complete')
+    print('✓ k3d cluster setup complete')
     print('')
 
 # Run cluster setup
-ensure_k3s_cluster()
+ensure_k3d_cluster()
 
 # =============================================================================
 # Tilt UI Configuration
@@ -209,7 +278,7 @@ print('=' * 80)
 
 # Generate Kubernetes manifests from Tanka
 print('Generating manifests from Tanka...')
-tanka_manifests = str(local('cd {} && tk show {}'.format(TANKA_DIR, TANKA_ENV)))
+tanka_manifests = str(local('cd {} && tk show {} --dangerous-allow-redirect'.format(TANKA_DIR, TANKA_ENV)))
 
 # Apply manifests to cluster
 print('Deploying manifests to cluster...')
@@ -429,14 +498,16 @@ print('Tilt Configuration Complete')
 print('=' * 80)
 print('Project: {}'.format(PROJECT_NAME))
 print('Namespace: {}'.format(NAMESPACE))
-print('Cluster Context: {}'.format(get_k3s_context()))
+print('Cluster: k3d-{}'.format(K3D_CLUSTER_NAME))
+print('Context: {}'.format(get_k3s_context()))
 print('')
 print('Status:')
-print('  ✓ k3s cluster management configured')
+print('  ✓ k3d cluster management configured')
 print('  ✓ Docker builds configured (server + agent)')
 print('  ✓ Tanka deployments configured')
 print('  ✓ Port forwards and shortcuts configured')
 print('  ⚠ Live reload: Skipped (Issue #106 - full rebuild recommended)')
 print('')
 print('Run "tilt up" to start the development environment')
+print('The k3d cluster will be automatically created if it doesn\'t exist')
 print('=' * 80)
