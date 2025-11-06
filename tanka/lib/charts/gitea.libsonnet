@@ -60,6 +60,11 @@ local config = import '../raibid/config.libsonnet';
       // PostgreSQL database
       postgresql: {
         enabled: true,
+        image: {
+          registry: 'docker.io',
+          repository: 'bitnami/postgresql',
+          tag: 'latest',  // Use latest tag with ARM64 support
+        },
         persistence: {
           size: '5Gi',
           storageClass: 'local-path',
@@ -76,13 +81,10 @@ local config = import '../raibid/config.libsonnet';
         enabled: false,
       },
 
-      // Internal Redis for caching
-      redis: {
-        enabled: true,
-        architecture: 'standalone',
-        auth: {
-          enabled: false,
-        },
+      // Disable internal Redis Cluster - using external standalone Redis instead
+      // External Redis is already configured in cache.HOST above
+      'redis-cluster': {
+        enabled: false,
       },
 
       // Gitea configuration
@@ -120,10 +122,10 @@ local config = import '../raibid/config.libsonnet';
             PASSWD: 'gitea',  // Change in production
           },
 
-          // Cache configuration
+          // Cache configuration - using external standalone Redis
           cache: {
             ADAPTER: 'redis',
-            HOST: 'redis://%s-redis-master:6379/0' % name,
+            HOST: 'redis://redis-master:6379/0',  // External Redis service
           },
 
           // Session configuration

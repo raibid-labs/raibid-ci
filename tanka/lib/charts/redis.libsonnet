@@ -17,10 +17,16 @@ local config = import '../raibid/config.libsonnet';
       // Architecture: standalone for MVP (can upgrade to replication later)
       architecture: 'standalone',
 
+      // Image configuration - override to use ARM64-compatible tags
+      image: {
+        registry: 'docker.io',
+        repository: 'bitnami/redis',
+        tag: 'latest',  // Use latest tag with guaranteed ARM64 support
+      },
+
       // Authentication (disabled for MVP, enable in production)
       auth: {
-        enabled: true,
-        password: '',  // Will be auto-generated if empty
+        enabled: false,
       },
 
       // Master/Primary configuration
@@ -91,6 +97,11 @@ local config = import '../raibid/config.libsonnet';
       // Metrics for monitoring
       metrics: {
         enabled: true,
+        image: {
+          registry: 'docker.io',
+          repository: 'bitnami/redis-exporter',
+          tag: 'latest',  // Use latest tag with ARM64 support
+        },
         serviceMonitor: {
           enabled: false,  // Enable with Prometheus Operator
         },
