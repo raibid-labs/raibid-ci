@@ -381,6 +381,82 @@ print('✓ Auto-reload enabled for Tanka files')
 print('')
 
 # =============================================================================
+# Repository Mirroring (Automatic on Startup)
+# =============================================================================
+
+print('=' * 80)
+print('Repository Mirroring')
+print('=' * 80)
+
+# Mirror GitHub Repositories - Automatically sync repos on startup
+local_resource(
+    name='mirror-repos',
+    cmd='''
+#!/bin/bash
+set -e
+
+echo "Waiting for Gitea to be ready..."
+max_attempts=30
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if curl -s http://localhost:3000/api/v1/version > /dev/null 2>&1; then
+        echo "✓ Gitea is ready"
+        break
+    fi
+    attempt=$((attempt + 1))
+    if [ $attempt -eq $max_attempts ]; then
+        echo "✗ Timeout waiting for Gitea"
+        exit 1
+    fi
+    sleep 2
+done
+
+echo "Starting repository mirroring..."
+echo "Configuration: ./raibid.yaml"
+echo ""
+
+# Check if required environment variables are set
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "⚠ WARNING: GITHUB_TOKEN not set. Only public repos will be accessible."
+    echo "Set it with: export GITHUB_TOKEN=\"ghp_...\""
+fi
+
+if [ -z "$GITEA_TOKEN" ]; then
+    echo "⚠ WARNING: GITEA_TOKEN not set. Using admin credentials from config."
+    echo "Set it with: export GITEA_TOKEN=\"...\""
+fi
+
+# Run mirroring (dry-run first to show what would be mirrored)
+echo "=== Dry Run ==="
+cargo run --bin raibid -- mirror run --dry-run || {
+    echo "✗ Dry run failed - check configuration in raibid.yaml"
+    exit 1
+}
+
+echo ""
+echo "=== Actual Mirroring ==="
+cargo run --bin raibid -- mirror run || {
+    echo "✗ Mirroring failed - check logs above"
+    exit 1
+}
+
+echo ""
+echo "✓ Repository mirroring complete"
+echo "Repositories are available at: http://localhost:3000"
+''',
+    auto_init=True,
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['mirroring'],
+    resource_deps=['gitea'],
+)
+
+print('✓ Repository mirroring configured')
+print('  - Runs automatically after Gitea starts')
+print('  - Syncs repos based on raibid.yaml configuration')
+print('  - Can be re-run manually via Tilt UI')
+print('')
+
+# =============================================================================
 # Manual Triggers and Shortcuts (Issue #105)
 # =============================================================================
 
@@ -388,15 +464,39 @@ print('=' * 80)
 print('Manual Triggers and Shortcuts')
 print('=' * 80)
 
-# Trigger Test Job - Send a test job to Redis queue
+# Trigger Test Job - Send a test job to Redis queue (after mirroring)
 local_resource(
     name='trigger-test-job',
-    cmd='echo "TODO: Implement test job trigger script"',
-    # TODO: Create a script that sends a test job to Redis Streams
-    # For now, this is a placeholder
+    cmd='''
+#!/bin/bash
+set -e
+
+echo "Triggering test build job..."
+echo ""
+
+# Get first mirrored repository from Gitea
+REPO=$(curl -s http://localhost:3000/api/v1/user/repos | jq -r '.[0].full_name' 2>/dev/null)
+
+if [ -z "$REPO" ] || [ "$REPO" = "null" ]; then
+    echo "✗ No repositories found in Gitea"
+    echo "Run 'mirror-repos' first to sync repositories"
+    exit 1
+fi
+
+echo "Using repository: $REPO"
+
+# Trigger job via Redis
+redis-cli -h localhost -p 6379 XADD raibid:jobs '*' \
+    job "{\"id\":\"test-$(date +%s)\",\"repo\":\"$REPO\",\"branch\":\"main\",\"commit\":\"HEAD\",\"status\":\"Pending\"}"
+
+echo ""
+echo "✓ Test job triggered for: $REPO"
+echo "Check agent logs to see job execution"
+''',
     auto_init=False,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['tools'],
+    resource_deps=['mirror-repos', 'redis'],
 )
 
 # Scale Agent - Manually trigger agent scaling
