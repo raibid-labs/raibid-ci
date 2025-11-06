@@ -10,6 +10,24 @@
 PROJECT_NAME = 'raibid-ci'
 NAMESPACE = 'raibid-system'
 
+# Environment variables for mirroring
+# These are read from your shell environment and passed to Tilt resources
+import os
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
+GITEA_TOKEN = os.getenv('GITEA_TOKEN', '')
+WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', '')
+
+# Print environment variable status (without revealing values)
+if GITHUB_TOKEN:
+    print('✓ GITHUB_TOKEN is set')
+else:
+    print('⚠ GITHUB_TOKEN not set - private repo access will be limited')
+
+if GITEA_TOKEN:
+    print('✓ GITEA_TOKEN is set')
+else:
+    print('⚠ GITEA_TOKEN not set - will use admin credentials')
+
 # k3d cluster configuration
 K3D_CLUSTER_NAME = 'raibid-ci'
 
@@ -448,6 +466,11 @@ echo "Repositories are available at: http://localhost:3000"
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['mirroring'],
     resource_deps=['gitea'],
+    env={
+        'GITHUB_TOKEN': GITHUB_TOKEN,
+        'GITEA_TOKEN': GITEA_TOKEN,
+        'WEBHOOK_SECRET': WEBHOOK_SECRET,
+    },
 )
 
 print('✓ Repository mirroring configured')
