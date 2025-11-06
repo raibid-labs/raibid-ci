@@ -12,10 +12,9 @@ NAMESPACE = 'raibid-system'
 
 # Environment variables for mirroring
 # These are read from your shell environment and passed to Tilt resources
-import os
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
-GITEA_TOKEN = os.getenv('GITEA_TOKEN', '')
-WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', '')
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
+GITEA_TOKEN = os.environ.get('GITEA_TOKEN', '')
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')
 
 # Print environment variable status (without revealing values)
 if GITHUB_TOKEN:
