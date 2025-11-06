@@ -56,9 +56,10 @@ pub enum Commands {
     },
     /// Manage CI/CD jobs
     Jobs(JobsCommand),
+    /// Mirror GitHub repositories to Gitea
+    Mirror(MirrorCommand),
     // Placeholder for future subcommands:
     // - Agent
-    // - Mirror
 }
 
 /// Configuration management commands
@@ -325,6 +326,28 @@ pub enum JobsSubcommand {
     Cancel {
         /// Job ID to cancel
         job_id: String,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+/// Mirror management commands
+#[derive(Args, Debug)]
+pub struct MirrorCommand {
+    #[command(subcommand)]
+    pub command: MirrorSubcommand,
+}
+
+/// Mirror subcommands
+#[derive(Subcommand, Debug)]
+pub enum MirrorSubcommand {
+    /// Run repository mirroring
+    Run {
+        /// Show what would be done without making changes
+        #[arg(long)]
+        dry_run: bool,
 
         /// Output as JSON
         #[arg(long)]

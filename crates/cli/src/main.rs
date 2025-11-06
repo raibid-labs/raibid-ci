@@ -67,6 +67,10 @@ fn main() -> Result<()> {
             // Handle jobs subcommands
             commands::jobs::handle(&cmd)
         }
+        Some(cli::Commands::Mirror(cmd)) => {
+            // Handle mirror subcommands (async)
+            tokio::runtime::Runtime::new()?.block_on(async { commands::mirror::handle(&cmd).await })
+        }
     }
 }
 

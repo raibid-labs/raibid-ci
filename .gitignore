@@ -22,6 +22,8 @@ target
 
 .claude*
 
+# Local configuration (may contain secrets)
+raibid.yaml
 
 # Added by cargo
 
