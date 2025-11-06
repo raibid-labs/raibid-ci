@@ -13,6 +13,7 @@ pub mod gitea_api;
 pub mod github;
 pub mod infrastructure;
 pub mod jobs;
+pub mod mirroring;
 
 // Re-export commonly used types
 pub use config::Config;

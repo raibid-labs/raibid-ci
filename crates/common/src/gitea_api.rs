@@ -16,7 +16,7 @@ use crate::github::GitHubRepository;
 #[derive(Clone)]
 pub struct GiteaClient {
     client: reqwest::Client,
-    config: GiteaConfig,
+    pub config: GiteaConfig,
 }
 
 /// Gitea repository information
