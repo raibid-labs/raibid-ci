@@ -150,11 +150,22 @@ impl MirroringService {
         // Mirror repositories to Gitea
         let gitea_repos = self
             .gitea_client
-            .mirror_github_repositories(&github_repos, target_org, github_token)
+            .mirror_github_repositories(&github_repos, target_org, github_token.clone())
             .await?;
 
         let mirrored = gitea_repos.len();
         let failed = github_repos.len() - mirrored;
+
+        // Register webhooks if enabled and we have a GitHub token
+        if self.config.webhooks.enabled && github_token.is_some() {
+            if let Err(e) = self
+                .register_webhooks_for_repos(&github_repos, &gitea_repos)
+                .await
+            {
+                warn!("Failed to register webhooks: {}", e);
+                // Don't fail the entire mirroring operation due to webhook errors
+            }
+        }
 
         Ok(MirroringResult {
             total_repos: github_repos.len(),
@@ -175,6 +186,7 @@ impl MirroringService {
         let mut mirrored = 0;
         let mut failed = 0;
         let mut errors = Vec::new();
+        let mut mirrored_repos = Vec::new();
 
         for repo_config in &self.config.repositories {
             // Parse source (e.g., "owner/repo")
@@ -187,7 +199,7 @@ impl MirroringService {
                 continue;
             }
 
-            let _owner = parts[0];
+            let owner = parts[0];
             let repo_name = parts[1];
 
             // Construct clone URL
@@ -215,13 +227,14 @@ impl MirroringService {
                     gitea_admin,
                     None,
                     repo_config.private,
-                    github_token,
+                    github_token.clone(),
                 )
                 .await
             {
-                Ok(_) => {
+                Ok(gitea_repo) => {
                     info!("Successfully mirrored: {}", repo_config.source);
                     mirrored += 1;
+                    mirrored_repos.push((owner, repo_name, gitea_repo));
                 }
                 Err(e) => {
                     let error_msg = format!("Failed to mirror {}: {}", repo_config.source, e);
@@ -229,6 +242,17 @@ impl MirroringService {
                     errors.push(error_msg);
                     failed += 1;
                 }
+            }
+        }
+
+        // Register webhooks if enabled and we have a GitHub token
+        if self.config.webhooks.enabled && env::var("GITHUB_TOKEN").is_ok() {
+            if let Err(e) = self
+                .register_webhooks_for_individual_repos(&mirrored_repos)
+                .await
+            {
+                warn!("Failed to register webhooks: {}", e);
+                // Don't fail the entire mirroring operation due to webhook errors
             }
         }
 
@@ -267,6 +291,138 @@ impl MirroringService {
         }
 
         Ok(combined)
+    }
+
+    /// Register webhooks for mirrored repositories
+    async fn register_webhooks_for_repos(
+        &self,
+        github_repos: &[crate::github::GitHubRepository],
+        gitea_repos: &[crate::gitea_api::GiteaRepository],
+    ) -> Result<()> {
+        if !self.config.webhooks.enabled {
+            return Ok(());
+        }
+
+        info!(
+            "Registering webhooks for {} repositories",
+            gitea_repos.len()
+        );
+
+        // Determine webhook endpoint URL
+        let webhook_url = if let Some(ref url) = self.config.webhooks.endpoint_url {
+            url.clone()
+        } else {
+            // Auto-configure webhook URL using Gitea URL
+            format!("{}/api/v1/repos/webhook", self.gitea_client.config.url)
+        };
+
+        // Get webhook secret from config or environment
+        let webhook_secret = self
+            .config
+            .webhooks
+            .secret
+            .clone()
+            .or_else(|| env::var("WEBHOOK_SECRET").ok());
+
+        let mut registered = 0;
+        let mut failed = 0;
+
+        for github_repo in github_repos {
+            // Parse owner from full_name (format: "owner/repo")
+            let parts: Vec<&str> = github_repo.full_name.split('/').collect();
+            if parts.len() != 2 {
+                warn!("Invalid repository full_name: {}", github_repo.full_name);
+                failed += 1;
+                continue;
+            }
+
+            let owner = parts[0];
+            let repo = parts[1];
+
+            // Only register webhooks for successfully mirrored repos
+            if !gitea_repos.iter().any(|gr| gr.name == github_repo.name) {
+                continue;
+            }
+
+            match self
+                .github_client
+                .ensure_webhook(owner, repo, &webhook_url, webhook_secret.clone())
+                .await
+            {
+                Ok(_) => {
+                    info!("Webhook registered for {}/{}", owner, repo);
+                    registered += 1;
+                }
+                Err(e) => {
+                    warn!("Failed to register webhook for {}/{}: {}", owner, repo, e);
+                    failed += 1;
+                }
+            }
+        }
+
+        info!(
+            "Webhook registration complete: {} registered, {} failed",
+            registered, failed
+        );
+
+        Ok(())
+    }
+
+    /// Register webhooks for individual mirrored repositories
+    async fn register_webhooks_for_individual_repos(
+        &self,
+        mirrored_repos: &[(&str, &str, crate::gitea_api::GiteaRepository)],
+    ) -> Result<()> {
+        if !self.config.webhooks.enabled || mirrored_repos.is_empty() {
+            return Ok(());
+        }
+
+        info!(
+            "Registering webhooks for {} individual repositories",
+            mirrored_repos.len()
+        );
+
+        // Determine webhook endpoint URL
+        let webhook_url = if let Some(ref url) = self.config.webhooks.endpoint_url {
+            url.clone()
+        } else {
+            format!("{}/api/v1/repos/webhook", self.gitea_client.config.url)
+        };
+
+        // Get webhook secret from config or environment
+        let webhook_secret = self
+            .config
+            .webhooks
+            .secret
+            .clone()
+            .or_else(|| env::var("WEBHOOK_SECRET").ok());
+
+        let mut registered = 0;
+        let mut failed = 0;
+
+        for (owner, repo, _gitea_repo) in mirrored_repos {
+            match self
+                .github_client
+                .ensure_webhook(owner, repo, &webhook_url, webhook_secret.clone())
+                .await
+            {
+                Ok(_) => {
+                    info!("Webhook registered for {}/{}", owner, repo);
+                    registered += 1;
+                }
+                Err(e) => {
+                    warn!("Failed to register webhook for {}/{}: {}", owner, repo, e);
+                    failed += 1;
+                }
+            }
+        }
+
+        info!(
+            "Individual webhook registration complete: {} registered, {} failed",
+            registered, failed
+        );
+
+        Ok(())
     }
 }
 

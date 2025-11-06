@@ -40,6 +40,36 @@ pub struct RateLimit {
     pub reset: i64,
 }
 
+/// GitHub webhook information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitHubWebhook {
+    pub id: u64,
+    pub name: String,
+    pub active: bool,
+    pub events: Vec<String>,
+    pub config: WebhookConfig,
+}
+
+/// Webhook configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebhookConfig {
+    pub url: String,
+    pub content_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub insecure_ssl: Option<String>,
+}
+
+/// Request to create a webhook
+#[derive(Debug, Clone, Serialize)]
+struct CreateWebhookRequest {
+    name: String,
+    active: bool,
+    events: Vec<String>,
+    config: WebhookConfig,
+}
+
 impl GitHubClient {
     /// Create a new GitHub API client
     pub fn new(config: GitHubConfig) -> Result<Self> {
@@ -270,6 +300,124 @@ impl GitHubClient {
         let filtered_repos = self.filter_repositories(all_repos, config)?;
 
         Ok(filtered_repos)
+    }
+
+    /// List webhooks for a repository
+    pub async fn list_webhooks(&self, owner: &str, repo: &str) -> Result<Vec<GitHubWebhook>> {
+        let url = format!("{}/repos/{}/{}/hooks", self.config.api_url, owner, repo);
+
+        debug!("Fetching webhooks for {}/{}", owner, repo);
+
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to fetch webhooks")?;
+
+        if !response.status().is_success() {
+            return Err(anyhow!(
+                "GitHub API error: {} - {}",
+                response.status(),
+                response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "unknown error".to_string())
+            ));
+        }
+
+        let webhooks: Vec<GitHubWebhook> = response
+            .json()
+            .await
+            .context("Failed to parse webhooks response")?;
+
+        debug!("Found {} webhooks for {}/{}", webhooks.len(), owner, repo);
+        Ok(webhooks)
+    }
+
+    /// Create a webhook for a repository
+    pub async fn create_webhook(
+        &self,
+        owner: &str,
+        repo: &str,
+        webhook_url: &str,
+        secret: Option<String>,
+    ) -> Result<GitHubWebhook> {
+        info!("Creating webhook for {}/{} -> {}", owner, repo, webhook_url);
+
+        let request = CreateWebhookRequest {
+            name: "web".to_string(),
+            active: true,
+            events: vec!["push".to_string(), "pull_request".to_string()],
+            config: WebhookConfig {
+                url: webhook_url.to_string(),
+                content_type: "json".to_string(),
+                secret,
+                insecure_ssl: Some("0".to_string()),
+            },
+        };
+
+        let url = format!("{}/repos/{}/{}/hooks", self.config.api_url, owner, repo);
+
+        let response = self
+            .client
+            .post(&url)
+            .json(&request)
+            .send()
+            .await
+            .context("Failed to create webhook")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "unknown error".to_string());
+
+            return Err(anyhow!(
+                "Failed to create webhook for {}/{}: {} - {}",
+                owner,
+                repo,
+                status,
+                error_text
+            ));
+        }
+
+        let webhook: GitHubWebhook = response
+            .json()
+            .await
+            .context("Failed to parse webhook creation response")?;
+
+        info!(
+            "Successfully created webhook {} for {}/{}",
+            webhook.id, owner, repo
+        );
+        Ok(webhook)
+    }
+
+    /// Check if a webhook already exists for a given URL
+    pub async fn webhook_exists(&self, owner: &str, repo: &str, webhook_url: &str) -> Result<bool> {
+        let webhooks = self.list_webhooks(owner, repo).await?;
+
+        Ok(webhooks.iter().any(|w| w.config.url == webhook_url))
+    }
+
+    /// Ensure a webhook exists (create if needed)
+    pub async fn ensure_webhook(
+        &self,
+        owner: &str,
+        repo: &str,
+        webhook_url: &str,
+        secret: Option<String>,
+    ) -> Result<()> {
+        if self.webhook_exists(owner, repo, webhook_url).await? {
+            debug!("Webhook already exists for {}/{}", owner, repo);
+            return Ok(());
+        }
+
+        self.create_webhook(owner, repo, webhook_url, secret)
+            .await?;
+        Ok(())
     }
 }
 
