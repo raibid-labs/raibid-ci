@@ -416,88 +416,18 @@ print('=' * 80)
 print('Repository Mirroring')
 print('=' * 80)
 
-# Provision Gitea Token - Create API token automatically
-# Get HOME directory in Starlark to avoid Tilt's secret redaction
-HOME_DIR = str(local('echo $HOME', quiet=True, echo_off=True)).strip()
-TOKEN_FILE_PATH = HOME_DIR + '/.config/raibid/gitea-token'
+# Provision Credentials Secret - Create k8s secret with GitHub and Gitea credentials
+# This secret is used by mirroring operations
+local('kubectl create secret generic raibid-credentials -n {} \
+    --from-literal=github-token={} \
+    --from-literal=gitea-admin-user=raibid-admin \
+    --from-literal=gitea-admin-password=r8sA8CPHD9!bt6d \
+    --dry-run=client -o yaml | kubectl apply -f -'.format(
+        NAMESPACE,
+        GITHUB_TOKEN if GITHUB_TOKEN else 'unset'
+    ), quiet=True, echo_off=True)
 
-local_resource(
-    name='provision-gitea-token',
-    cmd='''
-#!/bin/bash
-set -e
-
-# Token file location (passed from Tiltfile to avoid $HOME redaction)
-TOKEN_FILE="{}"
-mkdir -p "$(dirname "$TOKEN_FILE")"'''.format(TOKEN_FILE_PATH) + '''
-
-echo "Provisioning Gitea API token..."
-
-# Wait for Gitea to be ready
-max_attempts=30
-attempt=0
-while [ $attempt -lt $max_attempts ]; do
-    if curl -s http://localhost:3000/api/v1/version > /dev/null 2>&1; then
-        echo "✓ Gitea is ready"
-        break
-    fi
-    attempt=$((attempt + 1))
-    if [ $attempt -eq $max_attempts ]; then
-        echo "✗ Timeout waiting for Gitea"
-        exit 1
-    fi
-    sleep 2
-done
-
-# Gitea admin credentials (from Helm chart)
-GITEA_USER="raibid-admin"
-GITEA_PASS="r8sA8CPHD9!bt6d"
-
-# Check if we already have a valid token
-if [ -f "$TOKEN_FILE" ]; then
-    EXISTING_TOKEN=$(cat "$TOKEN_FILE")
-    if curl -s -H "Authorization: token $EXISTING_TOKEN" http://localhost:3000/api/v1/user | jq -e '.id' > /dev/null 2>&1; then
-        echo "✓ Existing Gitea token is valid"
-        echo "Token file: $TOKEN_FILE"
-        exit 0
-    else
-        echo "⚠ Existing token is invalid, creating new one..."
-        rm -f "$TOKEN_FILE"
-    fi
-fi
-
-# Create new token with required scopes
-TOKEN_NAME="raibid-mirror-$(date +%s)"
-echo "Creating new Gitea token: $TOKEN_NAME"
-
-RESPONSE=$(curl -s -u "$GITEA_USER:$GITEA_PASS" \
-    -X POST http://localhost:3000/api/v1/users/raibid-admin/tokens \
-    -H "Content-Type: application/json" \
-    -d "{{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:organization\",\"write:repository\",\"write:user\"]}}")
-
-TOKEN=$(echo "$RESPONSE" | jq -r '.sha1')
-
-if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-    echo "✗ Failed to create Gitea token"
-    echo "Response: $RESPONSE"
-    exit 1
-fi
-
-# Save token to file
-echo "$TOKEN" > "$TOKEN_FILE"
-chmod 600 "$TOKEN_FILE"
-
-echo "✓ Gitea token created and saved to: $TOKEN_FILE"
-echo "  Token: ${{TOKEN:0:10}}..."
-echo ""
-echo "Add to your Dorothy config (~/.config/dorothy/user/config/environment.bash):"
-echo "  export GITEA_TOKEN=\\"\\$(cat {})\\""
-'''.format(TOKEN_FILE_PATH),
-    auto_init=True,
-    trigger_mode=TRIGGER_MODE_AUTO,
-    labels=['infrastructure'],
-    resource_deps=['gitea'],
-)
+print('✓ Credentials secret provisioned (raibid-credentials)')
 
 # Mirror GitHub Repositories - Automatically sync repos on startup
 local_resource(
@@ -542,7 +472,7 @@ echo "Repositories are available at: http://localhost:3000"
     auto_init=True,
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['mirroring'],
-    resource_deps=['provision-gitea-token'],
+    resource_deps=['gitea'],
     env={
         'GITHUB_TOKEN': GITHUB_TOKEN,
         'GITEA_TOKEN': GITEA_TOKEN,

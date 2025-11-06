@@ -1,0 +1,80 @@
+# Raibid CI Configuration
+# Local configuration for raibid-labs development
+
+# Enable repository mirroring
+mirroring:
+  enabled: true
+
+  # GitHub API configuration
+  github:
+    api_url: "https://api.github.com"
+    # Token should be set via environment variable: export GITHUB_TOKEN="ghp_..."
+    rate_limit_threshold: 100
+
+  # Mirror raibid-labs private repositories
+  organizations:
+    - name: "raibid-labs"
+      private_only: true
+      public_only: false
+      include_pattern: ".*"  # Mirror all repos
+      # Optionally exclude specific repos:
+      # exclude_pattern: "^(archived|deprecated)-.*"
+      # Target organization in Gitea (defaults to same name if not specified)
+      # target_organization: "raibid-labs"
+
+  # Webhook configuration for instant sync
+  webhooks:
+    enabled: true
+    # Secret should be set via environment variable: export RAIBID_WEBHOOK_SECRET="..."
+    # Webhook endpoint will be auto-configured based on API server settings
+
+  # Fallback sync interval (if webhooks fail) - 60 minutes
+  sync_interval_minutes: 60
+
+# Gitea configuration
+gitea:
+  url: "http://localhost:3000"  # Using port-forward for local development
+  admin_user: "raibid-admin"  # Admin user for repository operations
+  admin_password: "r8sA8CPHD9!bt6d"  # From Helm chart (ephemeral, dev only)
+  # Note: This is fine for local dev since Gitea is ephemeral
+  # For production, use GITEA_TOKEN environment variable instead
+  registry_enabled: true
+  registry_port: 5000
+
+# Redis configuration (for job queue)
+redis:
+  host: "localhost"  # Using port-forward for local development
+  port: 6379
+  # Password via: export RAIBID_REDIS_PASSWORD="..." (if needed)
+  job_stream: "raibid:jobs"
+
+# API server configuration
+api:
+  host: "0.0.0.0"
+  port: 8080
+  tls_enabled: false
+
+# Agent configuration
+agents:
+  types:
+    - "rust"
+  min_agents: 0
+  max_agents: 10
+  idle_timeout_seconds: 300
+  scaledown_delay_seconds: 60
+  cache_size_gb: 50
+
+# Cluster configuration
+cluster:
+  name: "raibid-ci"
+  namespace: "raibid-ci"
+  kubeconfig_path: "~/.kube/config"
+  reserved_cores: 2
+  reserved_memory_gb: 8
+
+# UI configuration
+ui:
+  tui_enabled: true
+  refresh_rate_ms: 250
+  color_scheme: "dark"
+  unicode_enabled: true
