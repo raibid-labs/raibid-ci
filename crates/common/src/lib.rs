@@ -9,6 +9,7 @@
 //! - Utility functions
 
 pub mod config;
+pub mod gitea_api;
 pub mod github;
 pub mod infrastructure;
 pub mod jobs;

@@ -19,6 +19,6 @@ mod schema;
 // Re-export public API
 pub use loader::{discover_config_files, load_config, load_config_file, validate_config};
 pub use schema::{
-    Config, GitHubConfig, MirroringConfig, OrganizationMirrorConfig, RepositoryMirrorConfig,
-    WebhookConfig,
+    Config, GitHubConfig, GiteaConfig, MirroringConfig, OrganizationMirrorConfig,
+    RepositoryMirrorConfig, WebhookConfig,
 };
