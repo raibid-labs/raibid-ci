@@ -485,7 +485,7 @@ echo "✓ Gitea token created and saved to: $TOKEN_FILE"
 echo "  Token: ${TOKEN:0:10}..."
 echo ""
 echo "Add to your Dorothy config (~/.config/dorothy/user/config/environment.bash):"
-echo "  export GITEA_TOKEN=\"\$(cat $TOKEN_FILE)\""
+echo "  export GITEA_TOKEN=\\"\\$(cat $TOKEN_FILE)\\""
 ''',
     auto_init=True,
     trigger_mode=TRIGGER_MODE_AUTO,
