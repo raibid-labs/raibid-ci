@@ -1,0 +1,70 @@
+# Repository Mirroring Configuration Example
+# ===========================================
+# This file demonstrates how to configure GitHub to Gitea repository mirroring
+
+# Enable repository mirroring
+mirroring:
+  enabled: true
+
+  # GitHub API configuration
+  github:
+    api_url: "https://api.github.com"
+    # Token should be set via environment variable: export GITHUB_TOKEN="ghp_..."
+    # token: ""
+    rate_limit_threshold: 100
+
+  # Mirror entire organizations with filtering
+  organizations:
+    # Example: Mirror all private repos from raibid-labs
+    - name: "raibid-labs"
+      private_only: true
+      include_pattern: ".*"  # Mirror all repos
+      # exclude_pattern: "^archived-.*"  # Optionally exclude archived repos
+      # target_organization: "raibid-labs"  # Defaults to same name
+
+    # Example: Mirror only specific repos from an org
+    - name: "my-company"
+      include_pattern: "^(backend|frontend|shared)-.*"  # Only repos starting with these prefixes
+      exclude_pattern: ".*-archived$"  # Exclude repos ending with -archived
+      private_only: false
+      public_only: false
+
+  # Mirror individual repositories
+  repositories:
+    - source: "user/my-personal-project"
+      private: false
+      # target: "my-project"  # Optional: rename in Gitea
+
+    - source: "company/internal-tool"
+      private: true
+      target: "internal-tool"
+
+  # Webhook configuration for instant sync
+  webhooks:
+    enabled: true
+    # Secret should be set via environment variable: export RAIBID_WEBHOOK_SECRET="..."
+    # secret: ""
+    # endpoint_url: "http://raibid-server.raibid-ci.svc.cluster.local:8080/webhooks/github"
+
+  # Fallback sync interval (if webhooks fail)
+  sync_interval_minutes: 60
+
+# Standard Gitea configuration (required for mirroring)
+gitea:
+  url: "http://gitea.raibid-ci.svc.cluster.local:3000"
+  admin_user: "admin"
+  # admin_password should be set via: export RAIBID_GITEA_ADMIN_PASSWORD="..."
+  registry_enabled: true
+  registry_port: 5000
+
+# Redis configuration (required for job queue)
+redis:
+  host: "redis.raibid-ci.svc.cluster.local"
+  port: 6379
+  job_stream: "raibid:jobs"
+
+# API server configuration (required for webhooks)
+api:
+  host: "0.0.0.0"
+  port: 8080
+  tls_enabled: false

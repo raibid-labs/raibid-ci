@@ -105,6 +105,7 @@ fn merge_configs(_base: Config, override_cfg: Config) -> Config {
         gitea: override_cfg.gitea,
         redis: override_cfg.redis,
         ui: override_cfg.ui,
+        mirroring: override_cfg.mirroring,
     }
 }
 

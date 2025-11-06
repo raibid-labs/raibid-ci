@@ -33,6 +33,10 @@ pub struct Config {
     /// UI configuration
     #[serde(default)]
     pub ui: UiConfig,
+
+    /// Mirroring configuration
+    #[serde(default)]
+    pub mirroring: MirroringConfig,
 }
 
 impl Config {
@@ -203,6 +207,113 @@ pub struct UiConfig {
     pub unicode_enabled: bool,
 }
 
+/// Mirroring configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct MirroringConfig {
+    /// Enable repository mirroring
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// GitHub configuration
+    #[serde(default)]
+    pub github: GitHubConfig,
+
+    /// Organization mirroring configurations
+    #[serde(default)]
+    pub organizations: Vec<OrganizationMirrorConfig>,
+
+    /// Individual repository mirrors
+    #[serde(default)]
+    pub repositories: Vec<RepositoryMirrorConfig>,
+
+    /// Webhook configuration
+    #[serde(default)]
+    pub webhooks: WebhookConfig,
+
+    /// Sync interval in minutes (fallback if webhooks fail)
+    #[serde(default = "default_sync_interval")]
+    pub sync_interval_minutes: u32,
+}
+
+/// GitHub API configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct GitHubConfig {
+    /// GitHub API URL (defaults to github.com)
+    #[serde(default = "default_github_api_url")]
+    pub api_url: String,
+
+    /// GitHub personal access token (should use env var GITHUB_TOKEN)
+    #[serde(default)]
+    pub token: Option<String>,
+
+    /// API rate limit threshold (requests remaining before backing off)
+    #[serde(default = "default_rate_limit_threshold")]
+    pub rate_limit_threshold: u32,
+}
+
+/// Organization mirror configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct OrganizationMirrorConfig {
+    /// GitHub organization name
+    pub name: String,
+
+    /// Only mirror private repositories
+    #[serde(default)]
+    pub private_only: bool,
+
+    /// Only mirror public repositories
+    #[serde(default)]
+    pub public_only: bool,
+
+    /// Include pattern (regex)
+    #[serde(default = "default_include_pattern")]
+    pub include_pattern: String,
+
+    /// Exclude pattern (regex)
+    #[serde(default)]
+    pub exclude_pattern: Option<String>,
+
+    /// Mirror to this Gitea organization (defaults to same name)
+    #[serde(default)]
+    pub target_organization: Option<String>,
+}
+
+/// Individual repository mirror configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct RepositoryMirrorConfig {
+    /// Repository full name (org/repo or user/repo)
+    pub source: String,
+
+    /// Target repository name in Gitea (optional, defaults to source name)
+    #[serde(default)]
+    pub target: Option<String>,
+
+    /// Mirror as private repository
+    #[serde(default)]
+    pub private: bool,
+}
+
+/// Webhook configuration
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct WebhookConfig {
+    /// Enable automatic webhook creation
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Webhook secret for signature verification (should use env var)
+    #[serde(default)]
+    pub secret: Option<String>,
+
+    /// Webhook endpoint URL (will be auto-configured if not specified)
+    #[serde(default)]
+    pub endpoint_url: Option<String>,
+}
+
 // Default functions
 fn default_cluster_name() -> String {
     "raibid-ci".to_string()
@@ -290,6 +401,22 @@ fn default_refresh_rate_ms() -> u32 {
 
 fn default_color_scheme() -> String {
     "dark".to_string()
+}
+
+fn default_github_api_url() -> String {
+    "https://api.github.com".to_string()
+}
+
+fn default_rate_limit_threshold() -> u32 {
+    100 // Back off when less than 100 requests remaining
+}
+
+fn default_include_pattern() -> String {
+    ".*".to_string() // Match all repositories by default
+}
+
+fn default_sync_interval() -> u32 {
+    60 // 60 minutes
 }
 
 // Default trait implementations
