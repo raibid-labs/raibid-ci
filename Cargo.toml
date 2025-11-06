@@ -69,7 +69,7 @@ reqwest = { version = "0.11", features = ["blocking", "json"] }
 urlencoding = "2.1"
 
 # Redis
-redis = { version = "0.24", features = ["tokio-comp", "streams"] }
+redis = { version = "0.32.7", features = ["tokio-comp", "streams"] }
 
 # Utilities
 regex = "1"

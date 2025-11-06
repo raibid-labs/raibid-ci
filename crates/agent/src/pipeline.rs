@@ -523,7 +523,7 @@ impl PipelineExecutor {
                 .arg(&timestamp)
                 .arg("message")
                 .arg(message)
-                .query_async::<_, ()>(&mut conn)
+                .query_async::<()>(&mut conn)
                 .await
                 .context("Failed to write log to Redis")?;
         }
@@ -587,7 +587,7 @@ impl PipelineExecutor {
                 .arg(status)
                 .arg("updated_at")
                 .arg(&timestamp)
-                .query_async::<_, ()>(&mut conn)
+                .query_async::<()>(&mut conn)
                 .await
                 .context("Failed to update job status")?;
 
@@ -596,7 +596,7 @@ impl PipelineExecutor {
                     .arg(&job_key)
                     .arg("exit_code")
                     .arg(code)
-                    .query_async::<_, ()>(&mut conn)
+                    .query_async::<()>(&mut conn)
                     .await
                     .context("Failed to update exit code")?;
             }
@@ -628,7 +628,7 @@ impl PipelineExecutor {
                 .arg(&artifacts_json)
                 .arg("EX")
                 .arg(86400 * 7) // Expire after 7 days
-                .query_async::<_, ()>(&mut conn)
+                .query_async::<()>(&mut conn)
                 .await
                 .context("Failed to store artifacts metadata")?;
 

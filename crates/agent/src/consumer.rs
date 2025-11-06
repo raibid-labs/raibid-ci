@@ -45,9 +45,7 @@ impl JobConsumer {
             .map_err(AgentError::RedisConnection)?;
 
         // Ping Redis to verify connection
-        redis::cmd("PING")
-            .query_async::<MultiplexedConnection, String>(&mut conn)
-            .await?;
+        redis::cmd("PING").query_async::<String>(&mut conn).await?;
 
         info!("Successfully connected to Redis at {}", config.redis.host);
 
@@ -329,7 +327,10 @@ mod tests {
         };
 
         let job_json = serde_json::to_string(&job).unwrap();
-        data.insert("job".to_string(), redis::Value::Data(job_json.into_bytes()));
+        data.insert(
+            "job".to_string(),
+            redis::Value::BulkString(job_json.into_bytes()),
+        );
 
         let msg = JobConsumer::parse_job_message("1234567890-0", &data).unwrap();
         assert_eq!(msg.id, "1234567890-0");
@@ -349,7 +350,7 @@ mod tests {
         let mut data = HashMap::new();
         data.insert(
             "job".to_string(),
-            redis::Value::Data(b"invalid json".to_vec()),
+            redis::Value::BulkString(b"invalid json".to_vec()),
         );
 
         let result = JobConsumer::parse_job_message("1234567890-0", &data);
