@@ -16,6 +16,15 @@ GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 GITEA_TOKEN = os.environ.get('GITEA_TOKEN', '')
 WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')
 
+# If GITEA_TOKEN is not set, try to read from provisioned token file
+if not GITEA_TOKEN:
+    token_file = os.path.expanduser('~/.config/raibid/gitea-token')
+    if os.path.exists(token_file):
+        with open(token_file) as f:
+            GITEA_TOKEN = f.read().strip()
+        if GITEA_TOKEN:
+            print('✓ Using provisioned Gitea token from file')
+
 # Print environment variable status (without revealing values)
 if GITHUB_TOKEN:
     print('✓ GITHUB_TOKEN is set')
@@ -405,14 +414,20 @@ print('=' * 80)
 print('Repository Mirroring')
 print('=' * 80)
 
-# Mirror GitHub Repositories - Automatically sync repos on startup
+# Provision Gitea Token - Create API token automatically
 local_resource(
-    name='mirror-repos',
+    name='provision-gitea-token',
     cmd='''
 #!/bin/bash
 set -e
 
-echo "Waiting for Gitea to be ready..."
+# Token file location
+TOKEN_FILE="$HOME/.config/raibid/gitea-token"
+mkdir -p "$(dirname "$TOKEN_FILE")"
+
+echo "Provisioning Gitea API token..."
+
+# Wait for Gitea to be ready
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
@@ -427,6 +442,63 @@ while [ $attempt -lt $max_attempts ]; do
     fi
     sleep 2
 done
+
+# Gitea admin credentials (from Helm chart)
+GITEA_USER="raibid-admin"
+GITEA_PASS="r8sA8CPHD9!bt6d"
+
+# Check if we already have a valid token
+if [ -f "$TOKEN_FILE" ]; then
+    EXISTING_TOKEN=$(cat "$TOKEN_FILE")
+    if curl -s -H "Authorization: token $EXISTING_TOKEN" http://localhost:3000/api/v1/user | jq -e '.id' > /dev/null 2>&1; then
+        echo "✓ Existing Gitea token is valid"
+        echo "Token file: $TOKEN_FILE"
+        exit 0
+    else
+        echo "⚠ Existing token is invalid, creating new one..."
+        rm -f "$TOKEN_FILE"
+    fi
+fi
+
+# Create new token with required scopes
+TOKEN_NAME="raibid-mirror-$(date +%s)"
+echo "Creating new Gitea token: $TOKEN_NAME"
+
+RESPONSE=$(curl -s -u "$GITEA_USER:$GITEA_PASS" \
+    -X POST http://localhost:3000/api/v1/users/raibid-admin/tokens \
+    -H "Content-Type: application/json" \
+    -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:organization\",\"write:repository\",\"write:user\"]}")
+
+TOKEN=$(echo "$RESPONSE" | jq -r '.sha1')
+
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+    echo "✗ Failed to create Gitea token"
+    echo "Response: $RESPONSE"
+    exit 1
+fi
+
+# Save token to file
+echo "$TOKEN" > "$TOKEN_FILE"
+chmod 600 "$TOKEN_FILE"
+
+echo "✓ Gitea token created and saved to: $TOKEN_FILE"
+echo "  Token: ${TOKEN:0:10}..."
+echo ""
+echo "Add to your Dorothy config (~/.config/dorothy/user/config/environment.bash):"
+echo "  export GITEA_TOKEN=\"\$(cat $TOKEN_FILE)\""
+''',
+    auto_init=True,
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['infrastructure'],
+    resource_deps=['gitea'],
+)
+
+# Mirror GitHub Repositories - Automatically sync repos on startup
+local_resource(
+    name='mirror-repos',
+    cmd='''
+#!/bin/bash
+set -e
 
 echo "Starting repository mirroring..."
 echo "Configuration: ./raibid.yaml"
@@ -464,7 +536,7 @@ echo "Repositories are available at: http://localhost:3000"
     auto_init=True,
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['mirroring'],
-    resource_deps=['gitea'],
+    resource_deps=['provision-gitea-token'],
     env={
         'GITHUB_TOKEN': GITHUB_TOKEN,
         'GITEA_TOKEN': GITEA_TOKEN,
