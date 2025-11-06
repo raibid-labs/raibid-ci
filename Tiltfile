@@ -414,15 +414,19 @@ print('Repository Mirroring')
 print('=' * 80)
 
 # Provision Gitea Token - Create API token automatically
+# Get HOME directory in Starlark to avoid Tilt's secret redaction
+HOME_DIR = str(local('echo $HOME', quiet=True, echo_off=True)).strip()
+TOKEN_FILE_PATH = HOME_DIR + '/.config/raibid/gitea-token'
+
 local_resource(
     name='provision-gitea-token',
     cmd='''
 #!/bin/bash
 set -e
 
-# Token file location
-TOKEN_FILE="$HOME/.config/raibid/gitea-token"
-mkdir -p "$(dirname "$TOKEN_FILE")"
+# Token file location (passed from Tiltfile to avoid $HOME redaction)
+TOKEN_FILE="{}"
+mkdir -p "$(dirname "$TOKEN_FILE")"'''.format(TOKEN_FILE_PATH) + '''
 
 echo "Provisioning Gitea API token..."
 
@@ -466,7 +470,7 @@ echo "Creating new Gitea token: $TOKEN_NAME"
 RESPONSE=$(curl -s -u "$GITEA_USER:$GITEA_PASS" \
     -X POST http://localhost:3000/api/v1/users/raibid-admin/tokens \
     -H "Content-Type: application/json" \
-    -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:organization\",\"write:repository\",\"write:user\"]}")
+    -d "{{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:organization\",\"write:repository\",\"write:user\"]}}")
 
 TOKEN=$(echo "$RESPONSE" | jq -r '.sha1')
 
@@ -481,11 +485,11 @@ echo "$TOKEN" > "$TOKEN_FILE"
 chmod 600 "$TOKEN_FILE"
 
 echo "✓ Gitea token created and saved to: $TOKEN_FILE"
-echo "  Token: ${TOKEN:0:10}..."
+echo "  Token: ${{TOKEN:0:10}}..."
 echo ""
 echo "Add to your Dorothy config (~/.config/dorothy/user/config/environment.bash):"
-echo "  export GITEA_TOKEN=\\"\\$(cat $TOKEN_FILE)\\""
-''',
+echo "  export GITEA_TOKEN=\\"\\$(cat {})\\""
+'''.format(TOKEN_FILE_PATH),
     auto_init=True,
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['infrastructure'],
