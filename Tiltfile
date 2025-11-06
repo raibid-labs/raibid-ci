@@ -18,12 +18,11 @@ WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')
 
 # If GITEA_TOKEN is not set, try to read from provisioned token file
 if not GITEA_TOKEN:
-    token_file = os.path.expanduser('~/.config/raibid/gitea-token')
-    if os.path.exists(token_file):
-        with open(token_file) as f:
-            GITEA_TOKEN = f.read().strip()
-        if GITEA_TOKEN:
-            print('✓ Using provisioned Gitea token from file')
+    # Check if token file exists and read it
+    token_check = str(local('[ -f "$HOME/.config/raibid/gitea-token" ] && cat "$HOME/.config/raibid/gitea-token" || echo ""', quiet=True, echo_off=True)).strip()
+    if token_check:
+        GITEA_TOKEN = token_check
+        print('✓ Using provisioned Gitea token from file')
 
 # Print environment variable status (without revealing values)
 if GITHUB_TOKEN:
