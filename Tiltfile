@@ -216,8 +216,9 @@ ensure_k3d_cluster()
 update_settings(
     # Limit concurrent builds for resource management
     max_parallel_updates=2,
-    # Suppress unused image warnings (we use Tanka for deployment)
-    suppress_unused_image_warnings=['raibid-server', 'raibid-agent'],
+    # Suppress unused image warnings
+    # raibid-agent is used by ScaledJob which doesn't appear as a k8s_resource in Tilt
+    suppress_unused_image_warnings=['raibid-server', 'raibid-agent', 'raibid-agent:latest'],
 )
 
 # Set default kubectl context to k3s
@@ -379,21 +380,23 @@ k8s_resource(
 
 # Agent - Auto-scaling build agents (ScaledJob, not Deployment)
 # Note: KEDA ScaledJobs don't create pods until there are jobs
-# ScaledJob must be explicitly specified as it's not a standard workload type
-k8s_resource(
-    objects=['raibid-agent:scaledjob:raibid-system'],
-    new_name='agent',
-    labels=['application'],
-    # Dependencies: wait for Server, KEDA, and image to be built
-    resource_deps=['server', 'keda', 'raibid-agent:latest'],
-)
+# ScaledJob is managed by KEDA and doesn't appear as a workload in Tilt
+# The agent image build and ScaledJob deployment are tracked separately
+# k8s_resource(
+#     objects=['raibid-agent:scaledjob:raibid-system'],
+#     new_name='agent',
+#     labels=['application'],
+#     # Dependencies: wait for Server, KEDA, and image to be built
+#     resource_deps=['server', 'keda', 'raibid-agent:latest'],
+# )
 
 print('✓ Resource groups configured:')
 print('  - Infrastructure: redis, gitea, keda')
-print('  - Application: server, agent')
+print('  - Application: server')
+print('  - Images: raibid-server:latest, raibid-agent:latest')
 print('✓ Dependencies configured:')
 print('  - server depends on: redis, raibid-server:latest')
-print('  - agent depends on: server, keda, raibid-agent:latest')
+print('  - raibid-agent ScaledJob managed by KEDA (scales on job queue)')
 print('')
 
 # Watch Tanka files for changes and re-deploy
@@ -603,7 +606,7 @@ local_resource(
     auto_init=False,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['tools'],
-    resource_deps=['agent'],
+    # No dependencies - can be triggered any time after Tanka deploys the ScaledJob
 )
 
 # View Server Logs - Quick access to server logs
@@ -687,8 +690,9 @@ print('')
 update_settings(
     # Limit concurrent builds for resource management
     max_parallel_updates=2,
-    # Suppress unused image warnings (we use Tanka for deployment)
-    suppress_unused_image_warnings=['raibid-server', 'raibid-agent'],
+    # Suppress unused image warnings
+    # raibid-agent is used by ScaledJob which doesn't appear as a k8s_resource in Tilt
+    suppress_unused_image_warnings=['raibid-server', 'raibid-agent', 'raibid-agent:latest'],
 )
 
 # Set default kubectl context to k3s
