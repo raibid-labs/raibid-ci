@@ -216,7 +216,7 @@ update_settings(
     max_parallel_updates=2,
     # Suppress unused image warnings
     # raibid-agent is used by ScaledJob which doesn't appear as a k8s_resource in Tilt
-    suppress_unused_image_warnings=['raibid-admin/raibid-agent'],
+    suppress_unused_image_warnings=['raibid-admin/raibid-agent:latest'],
 )
 
 # Set default kubectl context to k3s
@@ -241,8 +241,9 @@ print('=' * 80)
 # Server image build
 print('Configuring raibid-server image build...')
 docker_build(
-    # Image name (Tilt will automatically add registry prefix via default_registry)
-    'raibid-admin/raibid-server',
+    # Image name with :latest tag to match manifest
+    # Tilt will add registry prefix via default_registry: localhost:3000 for build/push
+    'raibid-admin/raibid-server:latest',
 
     # Build context (repository root for workspace builds)
     context=DOCKER_BUILD_CONTEXT,
@@ -265,13 +266,14 @@ docker_build(
     # Use BuildKit for better caching and parallel builds
     # Note: BuildKit is default in modern Docker
 )
-print('✓ raibid-server build configured: raibid-admin/raibid-server')
+print('✓ raibid-server build configured: raibid-admin/raibid-server:latest')
 
 # Agent image build
 print('Configuring raibid-agent image build...')
 docker_build(
-    # Image name (Tilt will automatically add registry prefix via default_registry)
-    'raibid-admin/raibid-agent',
+    # Image name with :latest tag to match manifest
+    # Tilt will add registry prefix via default_registry: localhost:3000 for build/push
+    'raibid-admin/raibid-agent:latest',
 
     # Build context (repository root for workspace builds)
     context=DOCKER_BUILD_CONTEXT,
@@ -293,7 +295,7 @@ docker_build(
 
     # Use BuildKit for better caching and parallel builds
 )
-print('✓ raibid-agent build configured: raibid-admin/raibid-agent')
+print('✓ raibid-agent build configured: raibid-admin/raibid-agent:latest')
 
 print('')
 print('Docker builds will run in parallel (max 2 concurrent)')
@@ -381,7 +383,7 @@ k8s_resource(
         link('http://localhost:8081/metrics', 'Server Metrics'),
     ],
     # Dependencies: wait for Redis to be ready and image to be built
-    resource_deps=['redis', 'raibid-admin/raibid-server'],
+    resource_deps=['redis', 'raibid-admin/raibid-server:latest'],
 )
 
 # Agent - Auto-scaling build agents (ScaledJob, not Deployment)
@@ -611,7 +613,7 @@ update_settings(
     max_parallel_updates=2,
     # Suppress unused image warnings
     # raibid-agent is used by ScaledJob which doesn't appear as a k8s_resource in Tilt
-    suppress_unused_image_warnings=['raibid-admin/raibid-agent'],
+    suppress_unused_image_warnings=['raibid-admin/raibid-agent:latest'],
 )
 
 # Set default kubectl context to k3s

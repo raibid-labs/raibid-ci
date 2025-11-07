@@ -9,7 +9,7 @@ registries:
     mirrors:
       "gitea-http:3000":
         endpoint:
-          - http://gitea-http:3000
+          - http://gitea-http.raibid-system.svc.cluster.local:3000
       "localhost:3000":
         endpoint:
           - http://localhost:3000
