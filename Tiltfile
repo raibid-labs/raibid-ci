@@ -607,14 +607,6 @@ print('')
 # Tilt UI Configuration
 # =============================================================================
 
-# Configure Tilt settings
-update_settings(
-    # Limit concurrent builds for resource management
-    max_parallel_updates=2,
-    # Suppress unused image warnings
-    # raibid-agent is used by ScaledJob which doesn't appear as a k8s_resource in Tilt
-    suppress_unused_image_warnings=['raibid-admin/raibid-agent:latest'],
-)
 
 # Set default kubectl context to k3s
 allow_k8s_contexts(['default', 'k3s', 'k3d-raibid-ci'])
