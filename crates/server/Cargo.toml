@@ -7,6 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "API server for raibid-ci job dispatching and management"
 
+[[bin]]
+name = "raibid-server"
+path = "src/main.rs"
+
 [dependencies]
 # Workspace crates
 raibid-common = { workspace = true }
