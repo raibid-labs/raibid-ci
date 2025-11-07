@@ -429,61 +429,14 @@ local('kubectl create secret generic raibid-credentials -n {} \
 
 print('✓ Credentials secret provisioned (raibid-credentials)')
 
-# Mirror GitHub Repositories - Automatically sync repos on startup
-local_resource(
-    name='mirror-repos',
-    cmd='''
-#!/bin/bash
-set -e
-
-echo "Starting repository mirroring..."
-echo "Configuration: ./raibid.yaml"
-echo ""
-
-# Check if required environment variables are set
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo "⚠ WARNING: GITHUB_TOKEN not set. Only public repos will be accessible."
-    echo "Set it with: export GITHUB_TOKEN=\"ghp_...\""
-fi
-
-if [ -z "$GITEA_TOKEN" ]; then
-    echo "⚠ WARNING: GITEA_TOKEN not set. Using admin credentials from config."
-    echo "Set it with: export GITEA_TOKEN=\"...\""
-fi
-
-# Run mirroring (dry-run first to show what would be mirrored)
-echo "=== Dry Run ==="
-cargo run --bin raibid -- mirror run --dry-run || {
-    echo "✗ Dry run failed - check configuration in raibid.yaml"
-    exit 1
-}
-
-echo ""
-echo "=== Actual Mirroring ==="
-cargo run --bin raibid -- mirror run || {
-    echo "✗ Mirroring failed - check logs above"
-    exit 1
-}
-
-echo ""
-echo "✓ Repository mirroring complete"
-echo "Repositories are available at: http://localhost:3000"
-''',
-    auto_init=True,
-    trigger_mode=TRIGGER_MODE_AUTO,
-    labels=['mirroring'],
-    resource_deps=['gitea'],
-    env={
-        'GITHUB_TOKEN': GITHUB_TOKEN,
-        'GITEA_TOKEN': GITEA_TOKEN,
-        'WEBHOOK_SECRET': WEBHOOK_SECRET,
-    },
-)
-
-print('✓ Repository mirroring configured')
-print('  - Runs automatically after Gitea starts')
-print('  - Syncs repos based on raibid.yaml configuration')
-print('  - Can be re-run manually via Tilt UI')
+# Repository mirroring is now handled by Kubernetes Job
+# See: tanka/lib/raibid/mirror-setup-job.libsonnet
+print('✓ Repository mirroring configured via Kubernetes Job')
+print('  - Job: setup-gitea-mirrors')
+print('  - Runs after Gitea is deployed and ready')
+print('  - Uses raibid-credentials secret for GitHub token')
+print('  - Fetches and mirrors all raibid-labs private repos')
+print('  - Auto-sync every 8 hours via Gitea native mirroring')
 print('')
 
 # =============================================================================
@@ -493,6 +446,35 @@ print('')
 print('=' * 80)
 print('Manual Triggers and Shortcuts')
 print('=' * 80)
+
+# Run Mirror Setup - Manually re-run the mirror setup job
+local_resource(
+    name='run-mirror-setup',
+    cmd='''
+#!/bin/bash
+set -e
+
+echo "Re-running mirror setup job..."
+echo ""
+
+# Delete existing job if it exists
+kubectl delete job setup-gitea-mirrors -n {} 2>/dev/null || echo "No existing job to delete"
+
+# Wait a moment for cleanup
+sleep 2
+
+# Recreate the job (Tanka will regenerate it)
+cd ./tanka && tk apply environments/local --dangerous-auto-approve
+
+echo ""
+echo "✓ Mirror setup job recreated"
+echo "Check logs: kubectl logs -n {} -l app.kubernetes.io/component=mirror-setup -f"
+'''.format(NAMESPACE, NAMESPACE),
+    auto_init=False,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['tools'],
+    resource_deps=['gitea'],
+)
 
 # Trigger Test Job - Send a test job to Redis queue (after mirroring)
 local_resource(
@@ -509,7 +491,7 @@ REPO=$(curl -s http://localhost:3000/api/v1/user/repos | jq -r '.[0].full_name' 
 
 if [ -z "$REPO" ] || [ "$REPO" = "null" ]; then
     echo "✗ No repositories found in Gitea"
-    echo "Run 'mirror-repos' first to sync repositories"
+    echo "Hint: Run 'run-mirror-setup' first to sync repositories"
     exit 1
 fi
 
@@ -526,7 +508,7 @@ echo "Check agent logs to see job execution"
     auto_init=False,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['tools'],
-    resource_deps=['mirror-repos', 'redis'],
+    resource_deps=['redis'],
 )
 
 # Scale Agent - Manually trigger agent scaling
@@ -550,6 +532,7 @@ local_resource(
 )
 
 print('✓ Manual triggers configured:')
+print('  - run-mirror-setup: Re-run mirror setup job')
 print('  - trigger-test-job: Send test job to Redis queue')
 print('  - scale-agent: Manually trigger agent scaling')
 print('  - view-server-logs: Quick log access')

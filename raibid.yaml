@@ -35,7 +35,7 @@ mirroring:
 gitea:
   url: "http://localhost:3000"  # Using port-forward for local development
   admin_user: "raibid-admin"  # Admin user for repository operations
-  admin_password: "r8sA8CPHD9!bt6d"  # From Helm chart (ephemeral, dev only)
+  admin_password: "adminadmin"  # Simple dev password (ephemeral, dev only)
   # Note: This is fine for local dev since Gitea is ephemeral
   # For production, use GITEA_TOKEN environment variable instead
   registry_enabled: true

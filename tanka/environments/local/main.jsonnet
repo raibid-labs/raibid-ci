@@ -14,6 +14,7 @@ local flux = import 'charts/flux.libsonnet';
 local server = import 'raibid/server.libsonnet';
 local agent = import 'raibid/agent.libsonnet';
 local secrets = import 'raibid/secrets.libsonnet';
+local mirrorSetupJob = import 'raibid/mirror-setup-job.libsonnet';
 
 // Environment configuration
 local namespace = config.namespace;
@@ -57,6 +58,9 @@ local domain = 'localhost';
   ),
 
   secrets: secrets.secret(namespace),
+
+  // Mirror Setup Job - Sets up GitHub repository mirroring in Gitea
+  mirrorSetup: mirrorSetupJob.new(namespace),
 
   // Server - API server
   server: server.new(
