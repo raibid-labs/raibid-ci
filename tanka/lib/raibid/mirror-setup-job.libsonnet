@@ -89,10 +89,14 @@ local config = import './config.libsonnet';
           containers: [
             {
               name: 'setup-mirrors',
-              image: 'curlimages/curl:latest',
+              image: 'redis:8-alpine',
               command: ['/bin/sh', '-c'],
               args: [|||
                 set -e
+
+                # Install curl for API calls
+                apk add --no-cache curl
+
                 echo "=== Gitea Repository Mirroring Setup ==="
                 echo "Waiting for Gitea API to be ready..."
 
@@ -108,6 +112,21 @@ local config = import './config.libsonnet';
                   fi
                   echo "Waiting for Gitea... ($i/120)"
                   sleep 5
+                done
+
+                # Wait for Redis to be ready
+                echo "Waiting for Redis to be ready..."
+                for i in $(seq 1 60); do
+                  if redis-cli -h redis-master.%(namespace)s.svc.cluster.local ping > /dev/null 2>&1; then
+                    echo "✓ Redis is ready"
+                    break
+                  fi
+                  if [ $i -eq 60 ]; then
+                    echo "✗ Timeout waiting for Redis"
+                    exit 1
+                  fi
+                  echo "Waiting for Redis... ($i/60)"
+                  sleep 2
                 done
 
                 # Verify credentials are available
@@ -152,9 +171,16 @@ local config = import './config.libsonnet';
                 echo "$REPOS"
                 echo ""
 
-                # Create mirrors in Gitea
-                echo "Creating mirrors in Gitea..."
+                # Create Redis Stream consumer group if it doesn't exist
+                echo "Ensuring Redis Stream consumer group exists..."
+                redis-cli -h redis-master.%(namespace)s.svc.cluster.local \
+                  XGROUP CREATE raibid:jobs raibid-agents $ MKSTREAM 2>/dev/null || \
+                  echo "  ℹ Consumer group 'raibid-agents' already exists"
+
+                # Create mirrors in Gitea and dispatch build jobs
+                echo "Creating mirrors in Gitea and dispatching build jobs..."
                 MIRROR_COUNT=0
+                BUILD_JOB_COUNT=0
                 for CLONE_URL in $REPOS; do
                   REPO_NAME=$(echo $CLONE_URL | sed 's|.*/||' | sed 's|.git$||')
                   echo "- Mirroring: $REPO_NAME"
@@ -175,20 +201,51 @@ local config = import './config.libsonnet';
                     }")
 
                   HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+                  MIRROR_SUCCESS=false
+
                   if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
                     echo "  ✓ Successfully mirrored $REPO_NAME"
                     MIRROR_COUNT=$((MIRROR_COUNT + 1))
+                    MIRROR_SUCCESS=true
                   elif [ "$HTTP_CODE" = "409" ]; then
                     echo "  ℹ Mirror already exists: $REPO_NAME"
+                    MIRROR_SUCCESS=true
                   else
                     echo "  ⚠ Failed to mirror $REPO_NAME (HTTP $HTTP_CODE)"
+                  fi
+
+                  # Dispatch initial build job to Redis Streams
+                  if [ "$MIRROR_SUCCESS" = "true" ]; then
+                    echo "  → Dispatching initial build job for $REPO_NAME"
+                    JOB_ID=$(cat /proc/sys/kernel/random/uuid)
+                    GITEA_CLONE_URL="http://gitea-http.%(namespace)s.svc.cluster.local:3000/$GITEA_ADMIN_USER/$REPO_NAME.git"
+
+                    # Push job to Redis Stream using XADD
+                    redis-cli -h redis-master.%(namespace)s.svc.cluster.local \
+                      XADD raibid:jobs "*" \
+                      job_id "$JOB_ID" \
+                      job_type "initial_build" \
+                      repository "$REPO_NAME" \
+                      clone_url "$GITEA_CLONE_URL" \
+                      ref "main" \
+                      trigger "mirror_complete" \
+                      > /dev/null
+
+                    if [ $? -eq 0 ]; then
+                      echo "  ✓ Build job dispatched (ID: $JOB_ID)"
+                      BUILD_JOB_COUNT=$((BUILD_JOB_COUNT + 1))
+                    else
+                      echo "  ⚠ Failed to dispatch build job"
+                    fi
                   fi
                 done
 
                 echo ""
                 echo "✓ Repository mirroring setup complete"
                 echo "  Mirrored $MIRROR_COUNT repositories"
+                echo "  Dispatched $BUILD_JOB_COUNT build jobs"
                 echo "  Repositories available at: http://gitea-http.%(namespace)s.svc.cluster.local:3000/$GITEA_ADMIN_USER"
+                echo "  Build agents will auto-scale to handle queued jobs"
               ||| % { namespace: namespace }],
               env: [
                 {
