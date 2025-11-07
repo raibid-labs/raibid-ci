@@ -260,8 +260,8 @@ docker-build-server:
 
 # Build Docker image for server and push to Gitea registry
 docker-build-server-registry:
-    docker build -t localhost:30500/raibid-admin/raibid-server:latest -f crates/server/Dockerfile .
-    docker push localhost:30500/raibid-admin/raibid-server:latest
+    docker build -t localhost:3000/raibid-admin/raibid-server:latest -f crates/server/Dockerfile .
+    docker push localhost:3000/raibid-admin/raibid-server:latest
 
 # Build Docker image for agent (local)
 docker-build-agent:
@@ -269,8 +269,8 @@ docker-build-agent:
 
 # Build Docker image for agent and push to Gitea registry
 docker-build-agent-registry:
-    docker build -t localhost:30500/raibid-admin/raibid-agent:latest -f crates/agent/Dockerfile .
-    docker push localhost:30500/raibid-admin/raibid-agent:latest
+    docker build -t localhost:3000/raibid-admin/raibid-agent:latest -f crates/agent/Dockerfile .
+    docker push localhost:3000/raibid-admin/raibid-agent:latest
 
 # Build both Docker images (local tags)
 docker-build-all: docker-build-server docker-build-agent
@@ -282,23 +282,23 @@ docker-build-all-registry: docker-build-server-registry docker-build-agent-regis
 
 # Login to Gitea container registry
 registry-login:
-    docker login localhost:30500 -u raibid-admin -p adminadmin
+    docker login localhost:3000 -u raibid-admin -p adminadmin
 
 # Push server image to registry (assumes already built with registry tag)
 registry-push-server:
-    docker push localhost:30500/raibid-admin/raibid-server:latest
+    docker push localhost:3000/raibid-admin/raibid-server:latest
 
 # Push agent image to registry (assumes already built with registry tag)
 registry-push-agent:
-    docker push localhost:30500/raibid-admin/raibid-agent:latest
+    docker push localhost:3000/raibid-admin/raibid-agent:latest
 
 # Pull server image from registry
 registry-pull-server:
-    docker pull localhost:30500/raibid-admin/raibid-server:latest
+    docker pull localhost:3000/raibid-admin/raibid-server:latest
 
 # Pull agent image from registry
 registry-pull-agent:
-    docker pull localhost:30500/raibid-admin/raibid-agent:latest
+    docker pull localhost:3000/raibid-admin/raibid-agent:latest
 
 # List images in registry via API
 registry-list:
@@ -312,21 +312,21 @@ registry-list:
 # Show registry info
 registry-info:
     @echo "=== Gitea Container Registry ==="
-    @echo "Registry URL: localhost:30500"
+    @echo "Registry URL: localhost:3000"
     @echo "Namespace: raibid-admin"
     @echo "User: raibid-admin"
     @echo "Password: adminadmin"
     @echo ""
     @echo "Images:"
-    @echo "  - localhost:30500/raibid-admin/raibid-server:latest"
-    @echo "  - localhost:30500/raibid-admin/raibid-agent:latest"
+    @echo "  - localhost:3000/raibid-admin/raibid-server:latest"
+    @echo "  - localhost:3000/raibid-admin/raibid-agent:latest"
     @echo ""
     @echo "Web UI: http://localhost:3000 (Packages > Container)"
 
 # Tag and push custom image to registry
 registry-push IMAGE TAG="latest":
-    docker tag {{IMAGE}}:{{TAG}} localhost:30500/raibid-admin/{{IMAGE}}:{{TAG}}
-    docker push localhost:30500/raibid-admin/{{IMAGE}}:{{TAG}}
+    docker tag {{IMAGE}}:{{TAG}} localhost:3000/raibid-admin/{{IMAGE}}:{{TAG}}
+    docker push localhost:3000/raibid-admin/{{IMAGE}}:{{TAG}}
 
 # === Tanka Commands ===
 

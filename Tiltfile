@@ -51,8 +51,9 @@ TANKA_ENV = 'environments/local'
 DOCKER_BUILD_CONTEXT = '.'
 
 # Local Gitea OCI registry configuration
-# Registry is available via NodePort after Gitea is deployed
-REGISTRY_HOST = 'localhost:30500'
+# Registry runs on the same HTTP port as Gitea, exposed via Tilt port-forward
+# Tilt forwards Gitea service port 3000 to localhost:3000
+REGISTRY_HOST = 'localhost:3000'
 REGISTRY_NAMESPACE = 'raibid-admin'
 
 # =============================================================================

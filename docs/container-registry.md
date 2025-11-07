@@ -5,17 +5,18 @@ The raibid-ci system includes a self-hosted OCI-compliant container registry pow
 ## Overview
 
 - **Provider:** Gitea OCI Container Registry
-- **Registry URL:** `localhost:30500`
+- **Registry URL:** `localhost:3000` (same HTTP port as Gitea)
 - **Namespace:** `raibid-admin`
 - **Protocol:** HTTP (local development only)
 - **Authentication:** Gitea user credentials
+- **Note:** The OCI registry runs on the same HTTP port (3000) as the Gitea web interface, exposed via NodePort 30080
 
 ## Quick Start
 
 ### 1. Login to Registry
 
 ```bash
-docker login localhost:30500 -u raibid-admin -p adminadmin
+docker login localhost:3000 -u raibid-admin -p adminadmin
 ```
 
 **Note:** For production deployments, use secure credentials and HTTPS.
@@ -24,17 +25,17 @@ docker login localhost:30500 -u raibid-admin -p adminadmin
 
 ```bash
 # Tag your image
-docker tag my-app:latest localhost:30500/raibid-admin/my-app:latest
+docker tag my-app:latest localhost:3000/raibid-admin/my-app:latest
 
 # Push to registry
-docker push localhost:30500/raibid-admin/my-app:latest
+docker push localhost:3000/raibid-admin/my-app:latest
 ```
 
 ### 3. Pull Images
 
 ```bash
 # Pull from registry
-docker pull localhost:30500/raibid-admin/my-app:latest
+docker pull localhost:3000/raibid-admin/my-app:latest
 ```
 
 ## Integration with Tilt
@@ -43,7 +44,7 @@ The Tiltfile is configured to automatically build and push images to the local G
 
 ```python
 # In Tiltfile
-REGISTRY_HOST = 'localhost:30500'
+REGISTRY_HOST = 'localhost:3000'
 REGISTRY_NAMESPACE = 'raibid-admin'
 
 docker_build(
@@ -68,7 +69,7 @@ The cluster is configured to pull images from the local registry without authent
 spec:
   containers:
   - name: raibid-server
-    image: localhost:30500/raibid-admin/raibid-server:latest
+    image: localhost:3000/raibid-admin/raibid-server:latest
     imagePullPolicy: IfNotPresent
 ```
 
@@ -94,16 +95,8 @@ gitea: {
   },
 }
 
-// Expose registry port
-additionalPorts: [
-  {
-    name: 'registry',
-    containerPort: 5000,
-    servicePort: 5000,
-    nodePort: 30500,
-    protocol: 'TCP',
-  },
-],
+// Note: Registry uses the same HTTP port as Gitea (3000)
+// No additional ports needed - the registry API is accessible at /v2/ on the main HTTP port
 ```
 
 ### Docker Daemon Configuration
@@ -114,7 +107,7 @@ For local development with insecure registries, configure Docker:
 // /etc/docker/daemon.json (Linux)
 // ~/.docker/daemon.json (Docker Desktop)
 {
-  "insecure-registries": ["localhost:30500"]
+  "insecure-registries": ["localhost:3000"]
 }
 ```
 
@@ -195,9 +188,9 @@ To remove old or unused images:
 
 ### Login Fails
 
-**Error:** `Error response from daemon: Get "https://localhost:30500/v2/": http: server gave HTTP response to HTTPS client`
+**Error:** `Error response from daemon: Get "https://localhost:3000/v2/": http: server gave HTTP response to HTTPS client`
 
-**Solution:** Add `localhost:30500` to insecure registries in Docker daemon configuration.
+**Solution:** Add `localhost:3000` to insecure registries in Docker daemon configuration.
 
 ### Push Fails with 401 Unauthorized
 
@@ -205,29 +198,32 @@ To remove old or unused images:
 
 **Solution:** Login to the registry:
 ```bash
-docker login localhost:30500 -u raibid-admin -p adminadmin
+docker login localhost:3000 -u raibid-admin -p adminadmin
 ```
 
 ### Image Pull Fails in Kubernetes
 
-**Error:** `Failed to pull image "localhost:30500/raibid-admin/my-app:latest": rpc error`
+**Error:** `Failed to pull image "localhost:3000/raibid-admin/my-app:latest": rpc error`
 
-**Solution:** Ensure the registry port (30500) is accessible from within the cluster. Check that the Gitea service is running:
+**Solution:** Ensure the registry port (30080) is accessible from within the cluster. Check that the Gitea service is running:
 ```bash
 kubectl get svc -n raibid-system gitea-http
 ```
 
 ### Registry Not Accessible
 
-**Error:** `dial tcp 127.0.0.1:30500: connect: connection refused`
+**Error:** `dial tcp 127.0.0.1:30080: connect: connection refused`
 
-**Solution:** Verify Gitea is running and the registry port is exposed:
+**Solution:** Verify Gitea is running and the HTTP port is exposed:
 ```bash
 # Check Gitea pod
 kubectl get pod -n raibid-system -l app.kubernetes.io/name=gitea
 
 # Check service ports
 kubectl get svc -n raibid-system gitea-http -o yaml | grep -A 10 ports
+
+# Test registry endpoint
+curl http://localhost:3000/v2/
 ```
 
 ## Production Considerations

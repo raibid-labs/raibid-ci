@@ -44,17 +44,6 @@ local config = import '../raibid/config.libsonnet';
         },
       },
 
-      // Additional ports for OCI registry
-      additionalPorts: [
-        {
-          name: 'registry',
-          containerPort: 5000,
-          servicePort: 5000,
-          nodePort: 30500,
-          protocol: 'TCP',
-        },
-      ],
-
       // Ingress disabled for MVP
       ingress: {
         enabled: false,
