@@ -1,0 +1,22 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: raibid-ci
+servers: 1
+agents: 0
+registries:
+  config: |
+    mirrors:
+      "gitea-http:3000":
+        endpoint:
+          - http://gitea-http:3000
+      "localhost:3000":
+        endpoint:
+          - http://localhost:3000
+    configs:
+      "gitea-http:3000":
+        tls:
+          insecure_skip_verify: true
+      "localhost:3000":
+        tls:
+          insecure_skip_verify: true

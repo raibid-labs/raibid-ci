@@ -63,11 +63,12 @@ local domain = 'localhost';
   mirrorSetup: mirrorSetupJob.new(namespace),
 
   // Server - API server
-  // Note: Images pushed to localhost:3000 via Tilt, but k8s pulls from cluster-internal service
+  // Note: Images pushed to localhost:3000 via Tilt, k8s pulls from short service name
+  // Using short name 'gitea-http:3000' instead of FQDN for simpler resolution
   server: server.new(
     namespace,
     'raibid-server',
-    'gitea-http.raibid-system.svc.cluster.local:3000/raibid-admin/raibid-server:latest',
+    'gitea-http:3000/raibid-admin/raibid-server:latest',
     replicas=1
   ),
 
@@ -75,7 +76,7 @@ local domain = 'localhost';
   agent: agent.new(
     namespace,
     'raibid-agent',
-    'gitea-http.raibid-system.svc.cluster.local:3000/raibid-admin/raibid-agent:latest',
+    'gitea-http:3000/raibid-admin/raibid-agent:latest',
     redisAddress='redis-master:6379',
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',

@@ -126,18 +126,10 @@ def create_k3d_cluster():
     """Create k3d cluster with raibid-ci configuration"""
     print('Creating k3d cluster: {}...'.format(K3D_CLUSTER_NAME))
 
-    # Create cluster without port mappings
-    # Port forwarding is handled by Tilt resource definitions
-    # This avoids port conflicts with existing services
-    cmd = [
-        'k3d cluster create {}'.format(K3D_CLUSTER_NAME),
-        '--agents 0',  # No agent nodes (single server for dev)
-        '--wait',  # Wait for cluster to be ready
-        '--timeout 5m',  # Timeout for cluster creation
-    ]
-
-    local(' '.join(cmd))
-    print('✓ k3d cluster created successfully')
+    # Create cluster using config file with registry configuration
+    # The config file includes insecure registry setup for Gitea
+    local('k3d cluster create --config ./infra/k3d/cluster-config.yaml --wait')
+    print('✓ k3d cluster created successfully with registry configuration')
 
 def start_k3d_cluster():
     """Start an existing k3d cluster"""
