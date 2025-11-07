@@ -65,10 +65,11 @@ local keda = import '../charts/keda.libsonnet';
                 // Environment variables
                 env: [
                   util.env.value('RUST_LOG', 'info'),
-                  util.env.value('REDIS_URL', 'redis://%s' % redisAddress),
-                  util.env.value('STREAM_NAME', streamName),
+                  util.env.value('REDIS_HOST', std.split(redisAddress, ':')[0]),
+                  util.env.value('REDIS_PORT', std.split(redisAddress, ':')[1]),
+                  util.env.value('QUEUE_STREAM', streamName),
                   util.env.value('CONSUMER_GROUP', consumerGroup),
-                  util.env.configMap('QUEUE_NAME', 'raibid-config', 'QUEUE_NAME'),
+                  util.env.value('WORKSPACE_DIR', '/workspace'),
                 ] + [
                   util.env.value(k, env[k])
                   for k in std.objectFields(env)

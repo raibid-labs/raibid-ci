@@ -218,17 +218,29 @@ local config = import './config.libsonnet';
                   if [ "$MIRROR_SUCCESS" = "true" ]; then
                     echo "  → Dispatching initial build job for $REPO_NAME"
                     JOB_ID=$(cat /proc/sys/kernel/random/uuid)
-                    GITEA_CLONE_URL="http://gitea-http.%(namespace)s.svc.cluster.local:3000/$GITEA_ADMIN_USER/$REPO_NAME.git"
+                    TIMESTAMP=$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)
 
-                    # Push job to Redis Stream using XADD
+                    # Create JSON job object matching raibid_common::jobs::Job structure
+                    JOB_JSON=$(cat <<-EOF
+		{
+		  "id": "$JOB_ID",
+		  "repo": "$GITEA_ADMIN_USER/$REPO_NAME",
+		  "branch": "main",
+		  "commit": "",
+		  "status": "pending",
+		  "started_at": "$TIMESTAMP",
+		  "finished_at": null,
+		  "duration": null,
+		  "agent_id": null,
+		  "exit_code": null
+		}
+		EOF
+                    )
+
+                    # Push job to Redis Stream using XADD with JSON
                     redis-cli -h redis-master.%(namespace)s.svc.cluster.local \
                       XADD raibid:jobs "*" \
-                      job_id "$JOB_ID" \
-                      job_type "initial_build" \
-                      repository "$REPO_NAME" \
-                      clone_url "$GITEA_CLONE_URL" \
-                      ref "main" \
-                      trigger "mirror_complete" \
+                      job "$JOB_JSON" \
                       > /dev/null
 
                     if [ $? -eq 0 ]; then
