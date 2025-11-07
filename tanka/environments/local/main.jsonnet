@@ -81,7 +81,8 @@ local domain = 'localhost';
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',
     pollingInterval=10,
+    minReplicaCount=1,
     maxReplicaCount=10,
-    lagThreshold=5
+    lagThreshold=1
   ),
 }

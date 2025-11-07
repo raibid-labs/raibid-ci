@@ -16,8 +16,9 @@ local keda = import '../charts/keda.libsonnet';
   //   streamName: Redis stream name (default: 'raibid:jobs')
   //   consumerGroup: Consumer group name (default: 'raibid-agents')
   //   pollingInterval: Polling interval in seconds (default: 10)
+  //   minReplicaCount: Minimum number of agents (default: 1)
   //   maxReplicaCount: Maximum number of agents (default: 10)
-  //   lagThreshold: Queue lag threshold to trigger scaling (default: 5)
+  //   lagThreshold: Queue lag threshold to trigger scaling (default: 1)
   //   env: Additional environment variables
   new(
     namespace,
@@ -27,8 +28,9 @@ local keda = import '../charts/keda.libsonnet';
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',
     pollingInterval=10,
+    minReplicaCount=1,
     maxReplicaCount=10,
-    lagThreshold=5,
+    lagThreshold=1,
     env={}
   ):: {
     local labels = config.labels.forComponent('agent'),
@@ -148,6 +150,7 @@ local keda = import '../charts/keda.libsonnet';
         },
       ],
       pollingInterval,
+      minReplicaCount,
       maxReplicaCount,
       'default'
     ),

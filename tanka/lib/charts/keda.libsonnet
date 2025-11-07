@@ -98,9 +98,10 @@ local k = import '../k.libsonnet';
     //   jobTemplate: Kubernetes Job template spec
     //   triggers: Array of KEDA trigger specs
     //   pollingInterval: Polling interval in seconds (default: 10)
+    //   minReplicaCount: Minimum replicas (default: 0)
     //   maxReplicaCount: Maximum replicas (default: 10)
     //   scalingStrategy: Scaling strategy (default: 'default')
-    scaledJob(name, namespace, jobTemplate, triggers, pollingInterval=10, maxReplicaCount=10, scalingStrategy='default'):: {
+    scaledJob(name, namespace, jobTemplate, triggers, pollingInterval=10, minReplicaCount=0, maxReplicaCount=10, scalingStrategy='default'):: {
       apiVersion: 'keda.sh/v1alpha1',
       kind: 'ScaledJob',
       metadata: {
@@ -110,6 +111,7 @@ local k = import '../k.libsonnet';
       },
       spec: {
         pollingInterval: pollingInterval,
+        minReplicaCount: minReplicaCount,
         maxReplicaCount: maxReplicaCount,
         scalingStrategy: {
           strategy: scalingStrategy,

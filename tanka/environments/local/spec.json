@@ -9,7 +9,7 @@
     }
   },
   "spec": {
-    "apiServer": "https://127.0.0.1:6443",
+    "apiServer": "https://0.0.0.0:39033",
     "namespace": "raibid-system",
     "resourceDefaults": {},
     "expectVersions": {},
