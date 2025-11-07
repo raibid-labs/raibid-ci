@@ -203,6 +203,51 @@ raibid-cli status          # Show all component status
 raibid-cli status k3s      # Show k3s cluster status
 ```
 
+### Container Registry
+
+Gitea includes an OCI-compliant container registry for storing Docker images. The registry is automatically configured when Gitea is deployed.
+
+**Registry Access:**
+- **Registry URL:** `localhost:30500`
+- **Authentication:** Uses Gitea credentials (`raibid-admin` / `adminadmin` for local dev)
+- **Images:** Stored under namespace `raibid-admin`
+
+**Push Images:**
+
+```bash
+# Log in to the registry
+docker login localhost:30500 -u raibid-admin -p adminadmin
+
+# Tag an image for the registry
+docker tag my-image:latest localhost:30500/raibid-admin/my-image:latest
+
+# Push to the registry
+docker push localhost:30500/raibid-admin/my-image:latest
+```
+
+**Pull Images:**
+
+```bash
+# Pull from the registry
+docker pull localhost:30500/raibid-admin/my-image:latest
+```
+
+**Tilt Integration:**
+
+When using Tilt for development, Docker images are automatically built and pushed to the Gitea registry:
+- `localhost:30500/raibid-admin/raibid-server:latest`
+- `localhost:30500/raibid-admin/raibid-agent:latest`
+
+The Kubernetes cluster is configured to pull images from this local registry without requiring imagePullSecrets for development.
+
+**Registry Web UI:**
+
+Browse the registry via Gitea's web interface:
+1. Navigate to http://localhost:3000
+2. Login as `raibid-admin`
+3. Click on "Packages" in the top navigation
+4. Select "Container" to view OCI images
+
 ### Job Management
 
 Manage CI/CD jobs:

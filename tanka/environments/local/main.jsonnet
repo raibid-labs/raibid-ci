@@ -66,7 +66,7 @@ local domain = 'localhost';
   server: server.new(
     namespace,
     'raibid-server',
-    'raibid-server:latest',
+    'localhost:30500/raibid-admin/raibid-server:latest',
     replicas=1
   ),
 
@@ -74,7 +74,7 @@ local domain = 'localhost';
   agent: agent.new(
     namespace,
     'raibid-agent',
-    'raibid-agent:latest',
+    'localhost:30500/raibid-admin/raibid-agent:latest',
     redisAddress='redis-master:6379',
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',

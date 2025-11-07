@@ -50,6 +50,11 @@ TANKA_ENV = 'environments/local'
 # Docker build contexts
 DOCKER_BUILD_CONTEXT = '.'
 
+# Local Gitea OCI registry configuration
+# Registry is available via NodePort after Gitea is deployed
+REGISTRY_HOST = 'localhost:30500'
+REGISTRY_NAMESPACE = 'raibid-admin'
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -235,8 +240,8 @@ print('=' * 80)
 # Server image build
 print('Configuring raibid-server image build...')
 docker_build(
-    # Image name (matches Tanka deployment)
-    'raibid-server:latest',
+    # Image name for Gitea registry
+    '{}/{}/raibid-server'.format(REGISTRY_HOST, REGISTRY_NAMESPACE),
 
     # Build context (repository root for workspace builds)
     context=DOCKER_BUILD_CONTEXT,
@@ -259,13 +264,13 @@ docker_build(
     # Use BuildKit for better caching and parallel builds
     # Note: BuildKit is default in modern Docker
 )
-print('✓ raibid-server build configured')
+print('✓ raibid-server build configured: {}/{}/raibid-server'.format(REGISTRY_HOST, REGISTRY_NAMESPACE))
 
 # Agent image build
 print('Configuring raibid-agent image build...')
 docker_build(
-    # Image name (matches Tanka deployment)
-    'raibid-agent:latest',
+    # Image name for Gitea registry
+    '{}/{}/raibid-agent'.format(REGISTRY_HOST, REGISTRY_NAMESPACE),
 
     # Build context (repository root for workspace builds)
     context=DOCKER_BUILD_CONTEXT,
@@ -287,7 +292,7 @@ docker_build(
 
     # Use BuildKit for better caching and parallel builds
 )
-print('✓ raibid-agent build configured')
+print('✓ raibid-agent build configured: {}/{}/raibid-agent'.format(REGISTRY_HOST, REGISTRY_NAMESPACE))
 
 print('')
 print('Docker builds will run in parallel (max 2 concurrent)')
