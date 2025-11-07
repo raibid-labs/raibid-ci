@@ -135,13 +135,15 @@ local keda = import '../charts/keda.libsonnet';
       jobTemplate.spec,  // Pass only the Job spec, not the full template
       [
         // Redis Streams trigger
+        // Use streamLength to scale based on total unread messages
+        // This works for initial bootstrap (no consumers running yet)
         {
           type: 'redis-streams',
           metadata: {
             address: redisAddress,
             stream: streamName,
             consumerGroup: consumerGroup,
-            pendingEntriesCount: std.toString(lagThreshold),
+            streamLength: std.toString(lagThreshold),
           },
         },
       ],
