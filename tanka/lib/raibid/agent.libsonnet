@@ -132,7 +132,7 @@ local keda = import '../charts/keda.libsonnet';
     scaledJob: keda.crds.scaledJob(
       name,
       namespace,
-      jobTemplate,
+      jobTemplate.spec,  // Pass only the Job spec, not the full template
       [
         // Redis Streams trigger
         {

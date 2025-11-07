@@ -63,12 +63,12 @@ local domain = 'localhost';
   mirrorSetup: mirrorSetupJob.new(namespace),
 
   // Server - API server
-  // Note: Tilt will automatically add registry prefix (localhost:3000 for build/push,
-  // gitea-http:3000 for k8s deployment via default_registry config)
+  // Note: Tilt will automatically add registry prefix (localhost:5000 for build/push,
+  // k3d-registry:5000 for k8s deployment via default_registry config)
   server: server.new(
     namespace,
     'raibid-server',
-    'raibid-admin/raibid-server:latest',
+    'raibid-server:latest',
     replicas=1
   ),
 
@@ -76,7 +76,7 @@ local domain = 'localhost';
   agent: agent.new(
     namespace,
     'raibid-agent',
-    'raibid-admin/raibid-agent:latest',
+    'raibid-agent:latest',
     redisAddress='redis-master:6379',
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',
