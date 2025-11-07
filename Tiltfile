@@ -246,9 +246,9 @@ docker_build(
 
     # Watch paths for live updates
     # Trigger rebuild when Rust source or dependencies change
+    # Include all workspace crates since they're referenced in Cargo.toml
     only=[
-        'crates/server/',
-        'crates/common/',
+        'crates/',
         'Cargo.toml',
         'Cargo.lock',
     ],
@@ -275,9 +275,9 @@ docker_build(
 
     # Watch paths for live updates
     # Trigger rebuild when Rust source or dependencies change
+    # Include all workspace crates since they're referenced in Cargo.toml
     only=[
-        'crates/agent/',
-        'crates/common/',
+        'crates/',
         'Cargo.toml',
         'Cargo.lock',
     ],
