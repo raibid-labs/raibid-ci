@@ -73,16 +73,20 @@ local domain = 'localhost';
   ),
 
   // Agent - Auto-scaling build agents
+  // Note: Using k3d-registry prefix since Tanka deploys directly (not via Tilt)
   agent: agent.new(
     namespace,
     'raibid-agent',
-    'raibid-agent:latest',
+    'k3d-registry:5000/raibid-agent:latest',
     redisAddress='redis-master:6379',
     streamName='raibid:jobs',
     consumerGroup='raibid-agents',
     pollingInterval=10,
     minReplicaCount=1,
     maxReplicaCount=10,
-    lagThreshold=1
+    lagThreshold=1,
+    env={
+      GITEA_HOST: 'gitea-http.%s.svc.cluster.local:3000' % namespace,
+    }
   ),
 }

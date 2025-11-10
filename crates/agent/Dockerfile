@@ -81,8 +81,6 @@ FROM base AS tools-builder
 RUN cargo install --locked \
     # Advanced test runner with better reporting
     cargo-nextest@0.9.72 \
-    # Security auditing
-    cargo-audit@0.20.0 \
     # License and dependency checking
     cargo-deny@0.14.24 \
     && rm -rf /usr/local/cargo/registry
@@ -92,7 +90,6 @@ FROM base AS runtime
 
 # Copy installed cargo binaries from tools-builder
 COPY --from=tools-builder /usr/local/cargo/bin/cargo-nextest /usr/local/cargo/bin/
-COPY --from=tools-builder /usr/local/cargo/bin/cargo-audit /usr/local/cargo/bin/
 COPY --from=tools-builder /usr/local/cargo/bin/cargo-deny /usr/local/cargo/bin/
 
 # Copy agent binary from agent-builder
