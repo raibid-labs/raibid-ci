@@ -1,0 +1,41 @@
+{
+  "extends": "github:raibid-labs/workspace/templates/repo-types/rust-service.json",
+  "name": "raibid-ci",
+  "description": "DGX Spark Personal CI Agent Pool - TUI-first developer tool for managing self-hosted CI agents on NVIDIA DGX Spark. Terminal-based management interface for running ephemeral, auto-scaling CI/CD infrastructure. Built with Rust and Ratatui.",
+  "repositoryUrl": "https://github.com/raibid-labs/raibid-ci",
+  "context": [
+    "README.md",
+    "docs/USER_GUIDE.md",
+    "docs/INSTALLATION.md",
+    "docs/OPERATIONS.md",
+    "docs/API.md",
+    "TILT.md",
+    "ORCHESTRATOR.md"
+  ],
+  "project": {
+    "type": "rust-service",
+    "primaryLanguage": "rust",
+    "features": [
+      "tui-interface",
+      "k3s-cluster",
+      "gitea-integration",
+      "redis-streams",
+      "keda-autoscaling",
+      "flux-gitops",
+      "ci-cd-infrastructure",
+      "agent-management"
+    ],
+    "targetPlatform": "nvidia-dgx-spark",
+    "architecture": {
+      "infrastructure": [
+        "k3s-cluster",
+        "gitea-oci-registry",
+        "redis-streams",
+        "keda-autoscaler",
+        "flux-gitops"
+      ],
+      "runtime": "tokio-async",
+      "uiFramework": "ratatui"
+    }
+  }
+}
